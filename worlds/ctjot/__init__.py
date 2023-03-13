@@ -6,7 +6,6 @@ from .Items import CTJoTItemManager
 from .Locations import CTJoTLocationManager
 from .Options import Locations, Items, Rules, Victory
 
-
 from typing import Callable, Union
 
 
@@ -67,7 +66,7 @@ class CTJoTWorld(World):
 
         items = []
         for item in items_from_config.value:
-            for i in range(item['count']):
+            for i in range(item["count"]):
                 items.append(self.create_item(item["name"]))
 
         self.multiworld.itempool += items
@@ -86,12 +85,14 @@ class CTJoTWorld(World):
         # Create Location objects from yaml location data and add them to the menu region.
         for location_entry in locations_from_config.value:
             if location_entry["classification"] == "event":
+                # Create event locations/items (character pickup locations)
                 location = Location(self.player, location_entry["name"], None, menu_region)
                 location.event = True
                 # Add character here as a locked item.
                 location.place_locked_item(
                     self._item_manager.create_event_item(location_entry["character"], self.player))
             else:
+                # Create normal locations
                 location = Location(self.player, location_entry["name"], location_entry["id"], menu_region)
 
             location.access_rule = self._get_access_rule(rules_from_config[location_entry["name"]])

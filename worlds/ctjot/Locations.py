@@ -25,8 +25,8 @@ class CTJoTLocationManager:
         base_path = Path(__file__).parent
         file_path = os.path.join(base_path, "data", "location_data.json")
         with open(file_path) as file:
-            items = json.load(file)
-            for key, value in items.items():
+            locations = json.load(file)
+            for key, value in locations.items():
                 self._location_data[key] = LocationData(key, value)
 
     def get_location_name_to_id_mapping(self) -> dict[str, int]:
