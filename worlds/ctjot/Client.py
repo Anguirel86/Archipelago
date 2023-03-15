@@ -1,10 +1,11 @@
 import json
-import os
-from pathlib import Path
+import logging
 
-from NetUtils import NetworkItem
-from SNIClient import SNIContext
+from NetUtils import ClientStatus, NetworkItem
+
 from worlds.AutoSNIClient import SNIClient
+
+snes_logger = logging.getLogger("SNES")
 
 # FXPAK Pro protocol memory mapping used by SNI
 ROM_START = 0x000000
@@ -13,13 +14,26 @@ WRAM_SIZE = 0x20000
 SRAM_START = 0xE00000
 
 # CTJoT addresses/constants
+# TODO: Unify the address scheme.  These use the SNES addresses,
+#       but SNI maps things a little differently.
+#       For now I'm just converting on the fly when they are used.
 EVENT_BLOCK_SIZE = 0x200
 EVENT_BASE_ADDR = 0x7F0000
 TREASURE_BASE_ADDR = 0x7F0001
 RECEIVE_ITEM_ADDR = 0x7E298A
-RECEIVED_ITEM_COUNT_ADDR = 0x7E287D
+RECEIVED_ITEM_COUNT_ADDR = 0x7E287C
+VICTORY_ADDRESS = 0x7F0020
 
-LOCATION_ID_START = 0
+# These are already in SNI addressing
+VALIDATION_ADDR = ROM_START + 0x5E0000
+VALIDATION_SIZE = 32
+
+# Item and location ID offsets
+LOCATION_ID_START = 5000
+ITEM_ID_START = 5000
+
+# Don't track on the Load Screen(0x00) or Title Screen(0x1B1)
+INVALID_TRACKING_LOCATIONS = [0x00, 0x1B1]
 
 
 # These are the event flag locations for the baseline (non chronosanity) checks
@@ -50,7 +64,6 @@ _locations_baseline_key_items = {
     # ##########
     # 1000 AD
     # ##########
-    # TODO: Verify this happens on pickup, not on Robo cosplaying a tractor
     "Fiona Key": (0x7F007C, 0x80),
     "Kings Trial Key": (0x7F00A2, 0x80),
     "Snail Stop Key": (0x7F01D0, 0x10),
@@ -73,19 +86,18 @@ _locations_baseline_key_items = {
 # at the Northern Ruins that aren't treated like normal
 # treasure chests.  These are handled in event code.
 _locations_event_treasures = {
-    # TODO: Verify which flags go to which NR chests
-    "Northern Ruins Antechamber Left 600": 63,
-    "Northern Ruins Antechamber Sealed 600": 64,
+    "Northern Ruins Antechamber Left 600": (0x7F01AC, 0x08),
+    "Northern Ruins Antechamber Sealed 600": (0x7F01A9, 0x20),
     "Northern Ruins Antechamber Left 1000": (0x7F01AC, 0x04),
-    "Northern Ruins Antechamber Sealed 1000": 66,
-    "Northern Ruins Back Left Sealed 600": 67,
-    "Northern Ruins Back Right Sealed 600": 68,
-    "Northern Ruins Back Left Sealed 1000": 69,
-    "Northern Ruins Back Right Sealed 1000": 70,
-    "Northern Ruins Basement 600": 71,
+    "Northern Ruins Antechamber Sealed 1000": (0x7F01A6, 0x01),
+    "Northern Ruins Back Left Sealed 600": (0x7F01A9, 0x40),
+    "Northern Ruins Back Right Sealed 600": (0x7F01A9, 0x80),
+    "Northern Ruins Back Left Sealed 1000": (0x7F01A6, 0x02),
+    "Northern Ruins Back Right Sealed 1000": (0x7F01A6, 0x04),
+    "Northern Ruins Basement 600": (0x7F01AC, 0x02),
     "Northern Ruins Basement 1000": (0x7F01AC, 0x01),
     "Truce Inn Sealed 600": (0x7F014A, 0x80),
-    "Porre Elder Sealed 1": (0x7F01D3, 0x10),  # TODO: Make sure the order is right on these
+    "Porre Elder Sealed 1": (0x7F01D3, 0x10),
     "Porre Elder Sealed 2": (0x7F01D3, 0x20),
     "Guardia Castle Sealed 600": (0x7F00D9, 0x02),
     "Guardia Forest Sealed 600": (0x7F01D2, 0x80),
@@ -94,11 +106,15 @@ _locations_event_treasures = {
     "Porre Mayor Sealed 2": (0x7F01D1, 0x80),
     "Guardia Forest Sealed 1000": (0x7F01D1, 0x20),
     "Guardia Castle Sealed 1000": (0x7F00D9, 0x04),
-    "Heckran Sealed 1": (0x7F01A0, 0x04),  # TODO: Can we combine Heckran Sealed?  It's one chest
+    "Heckran Sealed 1": (0x7F01A0, 0x04),
     "Heckran Sealed 2": (0x7F01A0, 0x04),
-    "Pyramid Left": (0x7F01A0, 0x01),  # TODO: Linked location shenanigans for pyramid
-    "Pyramid Right": (0x7F01A0, 0x01),
     "Magic Cave Sealed": (0x7F0079, 0x01),
+
+    # Only consider one chest in the pyramid.  If a key item is in the pyramid then it
+    # will be in both chests (since you can only open one).  Both chests share a flag.
+    "Pyramid Left": (0x7F01A0, 0x01)
+    # "Pyramid Right": (0x7F01A0, 0x01),
+
 }
 
 # Not currently used for item randomization
@@ -352,8 +368,8 @@ _locations_treasure_chests = {
     "Denadoro Mts Waterfall Top 1": (0x06, 0x02),
     "Denadoro Mts Waterfall Top 2": (0x06, 0x04),
     "Denadoro Mts Waterfall Top 3": (0x06, 0x08),
-    "Denadoro Mts Waterfall Top 4": 139,  # TODO: 4 and 5 rolled the same item :(
-    "Denadoro Mts Waterfall Top 5": 140,  # TODO: offset 0x06, either 0x10 or 0x20
+    "Denadoro Mts Waterfall Top 4": (0x06, 10),
+    "Denadoro Mts Waterfall Top 5": (0x06, 20),
     "Denadoro Mts Entrance 1": (0x06, 0x40),
     "Denadoro Mts Entrance 2": (0x06, 0x80),
     "Denadoro Mts Screen3 1": (0x07, 0x01),
@@ -398,15 +414,14 @@ class CTJoTSNIClient(SNIClient):
     Game client for Chrono Trigger Jets of Time.
     """
 
-    def __init__(self):
-        base_path = Path(__file__).parent
-        file_path = os.path.join(base_path, "data", "location_data.json")
+    game = "Chrono Trigger Jets of Time"
 
-        # Grab the location data file and create a mapping of location names to IDs
-        with open(file_path) as file:
-            locations = json.load(file)
-            for key, value in locations.items():
-                _location_name_to_id[key] = LOCATION_ID_START + value
+    def __init__(self):
+        super().__init__()
+        import pkgutil
+        locations = json.loads(pkgutil.get_data(__name__, "data/location_data.json").decode())
+        for key, value in locations.items():
+            _location_name_to_id[key] = LOCATION_ID_START + value
 
     @staticmethod
     def _convert_to_sni_addressing(address: int):
@@ -426,9 +441,9 @@ class CTJoTSNIClient(SNIClient):
         :param address: Event memory address of this location flag
         :param flag: Bit flag for this specific location
         :param data: Event data block from SNES RAM
-        :return: True if the chest has been opened, false if not
+        :return: True if the check has been completed, false if not
         """
-        offset = EVENT_BASE_ADDR - address
+        offset = address - EVENT_BASE_ADDR
         return (data[offset] & flag) > 0
 
     @staticmethod
@@ -445,8 +460,18 @@ class CTJoTSNIClient(SNIClient):
         # but the data block starts at 0x7F0000 (event data start)
         return (data[offset + 1] & flag) > 0
 
+    @staticmethod
+    def _check_victory_condition(data: bytes) -> bool:
+        """
+        Check if the player has beaten the game.
+
+        :param data: Event data to check for victory condition
+        :return: True if the player has beaten the game, false if not
+        """
+        return (data[VICTORY_ADDRESS - EVENT_BASE_ADDR]) & 0x01 > 0
+
     @classmethod
-    async def _deliver_next_item(cls, ctx: SNIContext, items: list[NetworkItem]):
+    async def _deliver_next_item(cls, ctx, items: list[NetworkItem]):
         """
         Check if there are any items to deliver, and if there are, deliver the next one.
 
@@ -470,29 +495,47 @@ class CTJoTSNIClient(SNIClient):
             # zero out the RECEIVE_ITEM_ADDR memory once the item has been awarded.
             data = await snes_read(ctx, cls._convert_to_sni_addressing(RECEIVE_ITEM_ADDR), 1)
             if data is not None and data[0] == 0:
-                snes_buffered_write(ctx, RECEIVE_ITEM_ADDR, bytes([item.item]))
+                snes_buffered_write(
+                    ctx,
+                    cls._convert_to_sni_addressing(RECEIVE_ITEM_ADDR),
+                    bytes([item.item - ITEM_ID_START]))
                 # TODO: Writing this value back manually for now.  Event scripts can only write to a
                 #       very limited range of memory, and this value is outside of that range.
                 #       Maybe use a custom arbitrary ASM function? Find a different event command?
-                snes_buffered_write(ctx, RECEIVED_ITEM_COUNT_ADDR, bytes([num_items_delivered + 1]))
+                snes_buffered_write(
+                    ctx,
+                    cls._convert_to_sni_addressing(RECEIVED_ITEM_COUNT_ADDR),
+                    bytes([num_items_delivered + 1]))
                 await snes_flush_writes(ctx)
 
-    async def _track_locations(self, ctx: SNIContext):
+    async def _track_locations(self, ctx) -> bool:
         """
         Track the locations checked by the player.
 
         :param ctx: SNIContext for this SNI connection
         """
-        from SNIClient import snes_read, snes_buffered_write, snes_flush_writes
+        from SNIClient import snes_read
 
         if not ctx.allow_collect or ctx.server is None or ctx.slot is None:
             # We're not fully connected yet, to the server or emulator/hardware
-            return
+            return False
 
         # Do one big read to get all event and treasure flags.
         event_data = await snes_read(ctx, self._convert_to_sni_addressing(EVENT_BASE_ADDR), EVENT_BLOCK_SIZE)
         if event_data is None:
-            return
+            return False
+
+        # NOTE: Travelling through a time gate puts the game into a mode 7 scene that overwrites
+        # event memory. It always uses a predictable pattern starting at 7F0000, so we can use that
+        # to detect when gate travel is occurring and skip item tracking for the duration.
+        if event_data[0:4] == b"@ABC":
+            return False
+
+        # Check the player's current location and don't track if they are
+        # on either the title screen or the load screen.
+        # Location is stored in 0x7F0100
+        if event_data[100] in INVALID_TRACKING_LOCATIONS:
+            return False
 
         # Normal locations (standard randomizer checks)
         new_locations: list[int] = []
@@ -507,7 +550,15 @@ class CTJoTSNIClient(SNIClient):
         for name, (offset, flag) in _locations_treasure_chests.items():
             loc_id = _location_name_to_id[name]
             if loc_id not in ctx.checked_locations and loc_id not in new_locations:
-                if self._check_treasure_location(offset, flag. data):
+                if self._check_treasure_location(offset, flag, event_data):
+                    # This location has been checked
+                    new_locations.append(loc_id)
+
+        # Sealed chests and event chest locations
+        for name, (address, flag) in _locations_event_treasures.items():
+            loc_id = _location_name_to_id[name]
+            if loc_id not in ctx.checked_locations and loc_id not in new_locations:
+                if self._check_event_location(address, flag, event_data):
                     # This location has been checked
                     new_locations.append(loc_id)
 
@@ -515,20 +566,49 @@ class CTJoTSNIClient(SNIClient):
         if len(new_locations) > 0:
             await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": new_locations}])
 
-    async def validate_rom(self, ctx: SNIContext) -> bool:
-        # TODO: Find some way to validate this ROM.
-        #       Could read from RAM to get the "CHRONO TRIGGER" from the credits
-        #       text but that would also work on an unmodified ROM.
+        # Check to see if the player has beaten the game
+        if self._check_victory_condition(event_data):
+            if not ctx.finished_game:
+                await ctx.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
+                ctx.finished_game = True
+
+        return True
+
+    async def validate_rom(self, ctx) -> bool:
+        # Format is: APxyzPlayer_name
+        # Where:
+        #   AP is a string literal
+        #   xyz are a three byte version number
+        #   Player_name can be up to 16 characters
+        #
+        # TODO: Do something with version info
+        # TODO: This identifies the player, but not necessarily the AP seed.
+        #       Need to expand on this a bit.
+        from SNIClient import snes_read
+        data = await snes_read(ctx, VALIDATION_ADDR, VALIDATION_SIZE)
+        if data is None or data[0:2] != b"AP":
+            return False
+
+        name_end = min(data[5:21].find(b'\00'), 16) + 5
+        name = data[5:name_end]
+        ctx.game = self.game
         # We receive items from other worlds as well as our own world.
         ctx.items_handling = 0b011
+        ctx.rom = name
         ctx.allow_collect = True
         return True
 
-    async def game_watcher(self, ctx: SNIContext) -> None:
-        # Send newly checked locations to the server
-        await self._track_locations(ctx)
+    async def game_watcher(self, ctx) -> None:
+        # Send newly checked locations to the server.
+        tracking_succeeded = await self._track_locations(ctx)
 
-        # Deliver the next item to the player if there are items to give
-        await self._deliver_next_item(ctx, ctx.items_received)
+        # Deliver the next item to the player if there are items to give.
+        # Don't try to deliver items if something went wrong with tracking.
+        if tracking_succeeded:
+            await self._deliver_next_item(ctx, ctx.items_received)
 
-
+    async def deathlink_kill_player(self, ctx) -> None:
+        """
+        Not implemented for Jets of Time
+        """
+        pass

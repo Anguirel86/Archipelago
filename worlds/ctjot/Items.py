@@ -1,8 +1,6 @@
 from BaseClasses import ItemClassification, Item
 
 import json
-import os
-from pathlib import Path
 from typing import NamedTuple
 
 
@@ -21,6 +19,7 @@ class CTJoTItemManager:
     Manage item data.
     """
     _item_data_map = {}
+    _ITEM_ID_START = 5000
 
     # Key items that lead to go mode or other progression
     _progression_items = ["Toma's Pop", "Bent Hilt", "Bent Sword",
@@ -46,16 +45,14 @@ class CTJoTItemManager:
         """
         Read the item_data file and populate the item DB
         """
-        base_path = Path(__file__).parent
-        file_path = os.path.join(base_path, "data", "item_data.json")
-        with open(file_path) as file:
-            items = json.load(file)
-            for key, value in items.items():
-                classification = ItemClassification.progression if key in self._progression_items \
-                    else ItemClassification.progression if key in self._characters \
-                    else ItemClassification.useful if key in self._useful_items \
-                    else ItemClassification.filler
-                self._item_data_map[key] = ItemData(key, value, "CTJoTItem", classification)
+        import pkgutil
+        items = json.loads(pkgutil.get_data(__name__, "data/item_data.json").decode())
+        for key, value in items.items():
+            classification = ItemClassification.progression if key in self._progression_items \
+                else ItemClassification.progression if key in self._characters \
+                else ItemClassification.useful if key in self._useful_items \
+                else ItemClassification.filler
+            self._item_data_map[key] = ItemData(key, self._ITEM_ID_START + value, "CTJoTItem", classification)
 
     def get_item_data_by_name(self, item_name: str) -> ItemData:
         """

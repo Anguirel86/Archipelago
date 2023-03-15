@@ -2,10 +2,12 @@ from BaseClasses import Item, Location, MultiWorld, Tutorial, Region, Collection
 from Options import OptionDict, OptionList
 from ..AutoWorld import World, WebWorld
 
+from .Client import CTJoTSNIClient
 from .Items import CTJoTItemManager
 from .Locations import CTJoTLocationManager
 from .Options import Locations, Items, Rules, Victory
 
+import threading
 from typing import Callable, Union
 
 
@@ -45,7 +47,7 @@ class CTJoTWorld(World):
 
     def __init__(self, world: MultiWorld, player: int):
         super().__init__(world, player)
-        self._item_manager = CTJoTItemManager()
+        self.rom_name_available_event = threading.Event()
 
     def create_item(self, name: str) -> Item:
         """
@@ -93,7 +95,7 @@ class CTJoTWorld(World):
                     self._item_manager.create_event_item(location_entry["character"], self.player))
             else:
                 # Create normal locations
-                location = Location(self.player, location_entry["name"], location_entry["id"], menu_region)
+                location = Location(self.player, location_entry["name"], location_entry["id"] + 5000, menu_region)
 
             location.access_rule = self._get_access_rule(rules_from_config[location_entry["name"]])
             menu_region.locations.append(location)
@@ -115,6 +117,13 @@ class CTJoTWorld(World):
         Overridden from World
         """
         return self.multiworld.random.choice(self._item_manager.get_junk_fill_items())
+
+    def modify_multidata(self, multidata: dict):
+        import base64
+        player_name = self.multiworld.player_name[self.player]
+        if player_name and player_name != "":
+            new_name = base64.b64encode(bytes(player_name.encode("ascii"))).decode()
+            multidata["connect_names"][new_name] = multidata["connect_names"][self.multiworld.player_name[self.player]]
 
     def _get_access_rule(self, access_rules: list[list[str]]) -> Callable[[CollectionState], bool]:
         """
