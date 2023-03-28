@@ -23,6 +23,7 @@ TREASURE_BASE_ADDR = 0x7F0001
 RECEIVE_ITEM_ADDR = 0x7E298A
 RECEIVED_ITEM_COUNT_ADDR = 0x7E287C
 VICTORY_ADDRESS = 0x7F0020
+LOCATION_ADDRESS = 0xF50100  # already in SNI addressing
 
 # These are already in SNI addressing
 VALIDATION_ADDR = ROM_START + 0x5E0000
@@ -465,6 +466,10 @@ class CTJoTSNIClient(SNIClient):
         """
         Check if the player has beaten the game.
 
+        The multiworld code adds a new flag to the ending selector scene to reliably
+        verify that the player has beaten the game.  This should work with all  the
+        different game modes and endings.
+
         :param data: Event data to check for victory condition
         :return: True if the player has beaten the game, false if not
         """
@@ -520,7 +525,10 @@ class CTJoTSNIClient(SNIClient):
             # We're not fully connected yet, to the server or emulator/hardware
             return False
 
-        # Do one big read to get all event and treasure flags.
+        # Read the player's in-game location and then do one big read to get all event and treasure flags.
+        # NOTE: There is a potential race condition here where the location read happens in a good location
+        #       but the event data read occurs in an invalid location for tracking.
+        location_data = await snes_read(ctx, LOCATION_ADDRESS, 2)
         event_data = await snes_read(ctx, self._convert_to_sni_addressing(EVENT_BASE_ADDR), EVENT_BLOCK_SIZE)
         if event_data is None:
             return False
@@ -533,8 +541,8 @@ class CTJoTSNIClient(SNIClient):
 
         # Check the player's current location and don't track if they are
         # on either the title screen or the load screen.
-        # Location is stored in 0x7F0100
-        if event_data[100] in INVALID_TRACKING_LOCATIONS:
+        # Current location is stored in two bytes starting at 0x7F0100
+        if int.from_bytes(location_data, "little") in INVALID_TRACKING_LOCATIONS:
             return False
 
         # Normal locations (standard randomizer checks)
