@@ -5,7 +5,7 @@ from ..AutoWorld import World, WebWorld
 from .Client import CTJoTSNIClient
 from .Items import CTJoTItemManager
 from .Locations import CTJoTLocationManager
-from .Options import Locations, Items, Rules, Victory
+from .Options import Locations, Items, Rules, Victory, GameMode, ItemDifficulty
 
 import threading
 from typing import Callable, Union
@@ -33,7 +33,10 @@ class CTJoTWorld(World):
     _location_manager = CTJoTLocationManager()
 
     game = "Chrono Trigger Jets of Time"
-    option_definitions: Union[OptionList, OptionDict] = {
+    # option_definitions: Union[OptionList, OptionDict] = {
+    option_definitions = {
+        "game_mode": GameMode,
+        "item_difficulty": ItemDifficulty,
         "items": Items,
         "locations": Locations,
         "rules": Rules,
@@ -65,11 +68,19 @@ class CTJoTWorld(World):
         Overridden from World
         """
         items_from_config = getattr(self.multiworld, "items")[self.player]
-
         items = []
+
+        # This handles the key items from the yaml.
         for item in items_from_config.value:
             for i in range(item["count"]):
-                items.append(self.create_item(item["name"]))
+                items.append(self.create_item(item["id"]))
+
+        # Now add filler/useful items to spots that didn't roll key items
+        items.extend(
+            self._item_manager.select_filler_items(
+                self._location_manager.get_filler_location_ids(self.multiworld, self.player),
+                self.multiworld,
+                self.player))
 
         self.multiworld.itempool += items
 
@@ -95,10 +106,13 @@ class CTJoTWorld(World):
                     self._item_manager.create_event_item(location_entry["character"], self.player))
             else:
                 # Create normal locations
-                location = Location(self.player, location_entry["name"], location_entry["id"] + 5000, menu_region)
+                location = self._location_manager.get_location(self.player, location_entry, menu_region)
 
             location.access_rule = self._get_access_rule(rules_from_config[location_entry["name"]])
             menu_region.locations.append(location)
+
+        # Add filler locations for non-progression items
+        self._location_manager.add_filler_locations(self.multiworld, self.player, menu_region)
 
         # Add victory condition event
         victory_rules_from_config = getattr(self.multiworld, "victory")[self.player].value

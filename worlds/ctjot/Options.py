@@ -1,4 +1,4 @@
-from Options import OptionDict, OptionList
+from Options import FreeText, OptionDict, OptionList
 
 
 class Locations(OptionList):
@@ -15,3 +15,13 @@ class Rules(OptionDict):
 
 class Victory(OptionList):
     display_name = "victory"
+
+
+class GameMode(FreeText):
+    """Game mode chosen by the user."""
+    display_name = "Game Mode"
+
+
+class ItemDifficulty(FreeText):
+    """Game mode chosen by the user."""
+    display_name = "ItemDifficulty"

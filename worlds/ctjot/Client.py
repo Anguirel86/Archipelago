@@ -30,8 +30,8 @@ VALIDATION_ADDR = ROM_START + 0x5E0000
 VALIDATION_SIZE = 32
 
 # Item and location ID offsets
-LOCATION_ID_START = 5000
-ITEM_ID_START = 5000
+LOCATION_ID_START = 5100000
+ITEM_ID_START = 5100000
 
 # Don't track on the Load Screen(0x00) or Title Screen(0x1B1)
 INVALID_TRACKING_LOCATIONS = [0x00, 0x1B1]
@@ -113,8 +113,8 @@ _locations_event_treasures = {
 
     # Only consider one chest in the pyramid.  If a key item is in the pyramid then it
     # will be in both chests (since you can only open one).  Both chests share a flag.
-    "Pyramid Left": (0x7F01A0, 0x01)
-    # "Pyramid Right": (0x7F01A0, 0x01),
+    "Pyramid Left": (0x7F01A0, 0x01),
+    "Pyramid Right": (0x7F01A0, 0x01),
 
 }
 
