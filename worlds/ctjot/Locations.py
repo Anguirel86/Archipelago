@@ -1,4 +1,4 @@
-from BaseClasses import MultiWorld, Region, Location, Item, ItemClassification
+from BaseClasses import MultiWorld, Region, Location, ItemClassification
 
 import json
 from typing import NamedTuple
@@ -58,6 +58,8 @@ class CTJoTLocationManager:
     def get_location_name_to_id_mapping(self) -> dict[str, int]:
         """
         Get a dictionary mapping location names to IDs.
+
+        :return: Dictionary mapping location names to IDs
         """
         return self._name_to_id_mapping
 
@@ -117,12 +119,12 @@ class CTJoTLocationManager:
         filler_location_ids = []
         game_mode = getattr(multiworld, "game_mode")[player].value
 
-        if game_mode == "Lost Worlds":
+        if game_mode == "Lost worlds":
             # Add locations for prehistory, dark ages, and future
             filler_location_ids.extend(self._locations_prehistory)
             filler_location_ids.extend(self._locations_darkages)
             filler_location_ids.extend(self._locations_future)
-        elif game_mode == "Legacy Of Cyrus":
+        elif game_mode == "Legacy of cyrus":
             # Add locations for prehistory, dark ages, 600AD, 1000AD
             filler_location_ids.extend(self._locations_prehistory)
             filler_location_ids.extend(self._locations_darkages)
@@ -135,7 +137,7 @@ class CTJoTLocationManager:
             filler_location_ids.extend(self._locations_prison_tower_1000ad)
             filler_location_ids.extend(self._locations_future)
 
-        if game_mode == "Vanilla Rando":
+        if game_mode == "Vanilla rando":
             # Add the vanilla rando exclusive Bekkler's tent and Cyrus' Grave locations
             filler_location_ids.extend([311, 312])
 

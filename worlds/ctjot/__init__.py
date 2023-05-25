@@ -1,18 +1,18 @@
 from BaseClasses import Item, Location, MultiWorld, Tutorial, Region, CollectionState
-from Options import OptionDict, OptionList
-from ..AutoWorld import World, WebWorld
+from worlds.AutoWorld import World, WebWorld
 
 from .Client import CTJoTSNIClient
 from .Items import CTJoTItemManager
 from .Locations import CTJoTLocationManager
-from .Options import Locations, Items, Rules, Victory, GameMode, ItemDifficulty
+from .Options import Locations, Items, Rules, Victory, GameMode, \
+    ItemDifficulty, TabTreasures, BucketFragments, FragmentCount
 
 import threading
-from typing import Callable, Union
+from typing import Callable
 
 
 class CTJoTWebWorld(WebWorld):
-    settings_page = "https://ctjot.com/"
+    settings_page = "https://multiworld.ctjot.com/"
     # TODO: Figure out these fields
     tutorials = [Tutorial(
         "Multiworld Setup Guide",
@@ -37,6 +37,9 @@ class CTJoTWorld(World):
     option_definitions = {
         "game_mode": GameMode,
         "item_difficulty": ItemDifficulty,
+        "tab_treasures": TabTreasures,
+        "bucket_fragments": BucketFragments,
+        "fragment_count": FragmentCount,
         "items": Items,
         "locations": Locations,
         "rules": Rules,
@@ -72,8 +75,7 @@ class CTJoTWorld(World):
 
         # This handles the key items from the yaml.
         for item in items_from_config.value:
-            for i in range(item["count"]):
-                items.append(self.create_item(item["id"]))
+            items.append(self._item_manager.create_item_by_id(item["id"], self.player))
 
         # Now add filler/useful items to spots that didn't roll key items
         items.extend(

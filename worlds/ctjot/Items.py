@@ -37,15 +37,6 @@ class ItemTiers(IntEnum):
     SEALED_TREASURE = 12
 
 
-class ItemDifficulty(IntEnum):
-    """
-    Enum for the selected item difficulty
-    """
-    EASY = 0,
-    NORMAL = 1,
-    HARD = 2
-
-
 class ItemData(NamedTuple):
     """
     Store the data associated with a Chrono Trigger item.
@@ -112,6 +103,8 @@ class CTJoTItemManager:
         # awesome consumables
         [195, 197],
         # sealed treasure
+        # Sealed chests have a massive list of possible gear/consumables
+        # ranging from mid to awesome quality
         [168, 169, 160, 167, 157, 158, 159, 6, 7, 8, 21, 22, 36, 37, 50, 51, 52, 62, 63, 76, 131,
          132, 139, 102, 103, 117, 118, 119, 120, 121, 154, 173, 181, 182, 183, 161, 162, 170, 9,
          10, 16, 23, 24, 38, 41, 53, 54, 64, 67, 77, 133, 136, 146, 147, 104, 105, 113, 114, 115,
@@ -119,15 +112,6 @@ class CTJoTItemManager:
          106, 110, 112, 187, 14, 83, 84, 85, 40, 57, 145, 134, 143, 108, 122, 109, 107, 191, 193,
          202, 203, 204, 194, 196, 195, 197, 205, 206, 207]
     ]
-
-    # Sealed chests have a massive list of possible gear/consumables
-    # ranging from mid to awesome quality
-    _filler_item_sealed_tier = [168, 169, 160, 167, 157, 158, 159, 6, 7, 8, 21, 22, 36, 37, 50, 51, 52, 62, 63, 76, 131,
-                                132, 139, 102, 103, 117, 118, 119, 120, 121, 154, 173, 181, 182, 183, 161, 162, 170, 9,
-                                10, 16, 23, 24, 38, 41, 53, 54, 64, 67, 77, 133, 136, 146, 147, 104, 105, 113, 114, 115,
-                                116, 155, 163, 186, 11, 12, 13, 25, 26, 39, 55, 56, 65, 78, 137, 138, 140, 141, 142,
-                                106, 110, 112, 187, 14, 83, 84, 85, 40, 57, 145, 134, 143, 108, 122, 109, 107, 191, 193,
-                                202, 203, 204, 194, 196, 195, 197, 205, 206, 207]
 
     # Mapping of location tiers to location IDs within those tiers
     _location_tier_mapping: dict[LocationTiers, list[int]] = {
@@ -279,6 +263,12 @@ class CTJoTItemManager:
 
     _sealed_treasures = [(1, _filler_item_tiers[ItemTiers.SEALED_TREASURE])]
 
+    _tab_treasures = [
+        (10, [0xCD]),  # Power Tab
+        (10, [0xCE]),  # Magic Tab
+        (1, [0xCF])    # Speed Tab
+    ]
+
     _treasure_distributions = {
         "Easy": _easy_treasures,
         "Normal": _normal_treasures,
@@ -305,13 +295,31 @@ class CTJoTItemManager:
 
     def get_item_data_by_name(self, item_name: str) -> ItemData:
         """
-        Get item data
+        Get item data for the item with the given name.
+
+        :param item_name: The name of the item whose data is being fetched
+        :return: ItemData object associated with the given item name
         """
         return self._item_data_map_by_name[item_name]
 
-    def create_item(self, item_id: int, player: int) -> Item:
+    def create_item(self, item_name: str, player: int) -> Item:
         """
         Create an AP Item for the given item id and player.
+
+        :param item_name: Name of the item to create
+        :param player: ID of the player this item is for
+        :return: AP Item object for the requested item
+        """
+        item = self.get_item_data_by_name(item_name)
+        return Item(item.name, item.classification, item.code, player)
+
+    def create_item_by_id(self, item_id: int, player: int) -> Item:
+        """
+        Create an AP Item for the given item id and player.
+
+        :param item_id: ID of the item to be created
+        :param player: ID of the player this item is for
+        :return: AP Item object for the requested item
         """
         item = self._item_data_map_by_id[item_id]
         return Item(item.name, item.classification, item.code, player)
@@ -319,12 +327,16 @@ class CTJoTItemManager:
     def get_junk_fill_items(self) -> list[str]:
         """
         Get the list of items that can be used a junk fill.
+
+        :return: List of item names to use for junk fill
         """
         return self._junk_fill_items
 
     def get_item_name_to_id_mapping(self) -> dict[str, int]:
         """
         Get a dictionary of item names to IDs for all possible items.
+
+        :return: Dictionary mapping item names to item IDs
         """
         return {name: item.code for name, item in self._item_data_map_by_name.items()}
 
@@ -334,6 +346,10 @@ class CTJoTItemManager:
         Create an item object for an event rather than a normal item.
 
         Used for creating character recruitments and victory event items.
+
+        :param item_name: Name of the item to create
+        :param player: ID of the player this item is for
+        :return: AP Item object with the given name for the given player
         """
         return Item(item_name, ItemClassification.progression, None, player)
 
@@ -350,6 +366,11 @@ class CTJoTItemManager:
         """
         filler_items: list[Item] = []
         difficulty = getattr(multiworld, "item_difficulty")[player].value
+        tab_treasures = getattr(multiworld, "tab_treasures")[player].value
+        bucket_fragments = getattr(multiworld, "bucket_fragments")[player].value
+        fragment_count = getattr(multiworld, "fragment_count")[player].value
+        game_mode = getattr(multiworld, "game_mode")[player].value
+        chosen_locations = getattr(multiworld, "locations")[player].value
 
         for loc_id in location_ids:
             # Figure out which tier the location is part of
@@ -365,15 +386,45 @@ class CTJoTItemManager:
             # Get a random item ID for this location and difficulty
             if loc_tier == LocationTiers.SEALED:
                 distribution = self._sealed_treasures
+            elif tab_treasures:
+                distribution = self._tab_treasures
             else:
                 distribution = self._treasure_distributions[difficulty][loc_tier]
+
             item_id = self._weighted_random(distribution, multiworld)
 
             # Create an Archipelago item from the ID
             item_data = self._item_data_map_by_id[item_id]
-            item = self.create_item(item_data.code - self._ITEM_ID_START, player)
+            item = self.create_item(item_data.name, player)
 
             filler_items.append(item)
+
+        # If the user enabled bucket fragments then overwrite items in the filler list
+        # until we have the specified number of fragments.
+        # Lost Worlds does not support bucket fragments since you can't get to EoT.
+        if bucket_fragments and game_mode != "Lost Worlds":
+            # Shuffle the list and overwrite from the beginning.
+            multiworld.random.shuffle(filler_items)
+            for i in range(fragment_count):
+                filler_items[i] = self.create_item("fragment", player)
+
+        # If this is a Lost Worlds seed we may need to add some character specific items
+        # Bucket fragments can't be chosen
+        if game_mode == "Lost Worlds":
+            items_to_add = []
+            # Determine which items we need to add based on what characters are available.
+            # Remove items from the filler list to make space for our new items.
+            for location in chosen_locations:
+                if location["character"] == "Frog":
+                    items_to_add.append(self.create_item("Grand Leon", player))
+                    items_to_add.append(self.create_item("Hero Medal", player))
+                    filler_items.pop(multiworld.random.randrange(len(filler_items)))
+                    filler_items.pop(multiworld.random.randrange(len(filler_items)))
+                elif location["character"] == "Robo":
+                    items_to_add.append(self.create_item("Robo's Rbn", player))
+                    filler_items.pop(multiworld.random.randrange(len(filler_items)))
+
+            filler_items.extend(items_to_add)
 
         return filler_items
 

@@ -111,8 +111,9 @@ _locations_event_treasures = {
     "Heckran Sealed 2": (0x7F01A0, 0x04),
     "Magic Cave Sealed": (0x7F0079, 0x01),
 
-    # Only consider one chest in the pyramid.  If a key item is in the pyramid then it
-    # will be in both chests (since you can only open one).  Both chests share a flag.
+    # The pyramid chests share a flag.  Opening one will cause the other to vanish.
+    # In the normal randomizer the player could only get one of these, but in multiworld
+    # we will send items for both chests when the flag is cleared.
     "Pyramid Left": (0x7F01A0, 0x01),
     "Pyramid Right": (0x7F01A0, 0x01),
 
