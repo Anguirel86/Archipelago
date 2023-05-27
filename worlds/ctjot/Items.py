@@ -402,7 +402,7 @@ class CTJoTItemManager:
         # If the user enabled bucket fragments then overwrite items in the filler list
         # until we have the specified number of fragments.
         # Lost Worlds does not support bucket fragments since you can't get to EoT.
-        if bucket_fragments and game_mode != "Lost Worlds":
+        if bucket_fragments and game_mode != "Lost worlds":
             # Shuffle the list and overwrite from the beginning.
             multiworld.random.shuffle(filler_items)
             for i in range(fragment_count):
@@ -410,7 +410,7 @@ class CTJoTItemManager:
 
         # If this is a Lost Worlds seed we may need to add some character specific items
         # Bucket fragments can't be chosen
-        if game_mode == "Lost Worlds":
+        if game_mode == "Lost worlds":
             items_to_add = []
             # Determine which items we need to add based on what characters are available.
             # Remove items from the filler list to make space for our new items.
