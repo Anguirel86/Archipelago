@@ -341,7 +341,7 @@ _locations_treasure_chests = {
     "Kings Room 600": (0x03, 0x20),
     "Queens Room 600": (0x03, 0x40),
     "Royal Kitchen": (0x03, 0x80),
-    "Queens Tower 600": (0x0D, 0x08),
+    "Queens Tower 600": (0x1D, 0x08),
     "Kings Tower 600": (0x1E, 0x04),
     "Kings Tower 1000": (0x1E, 0x08),
     "Queens Tower 1000": (0x1E, 0x10),
