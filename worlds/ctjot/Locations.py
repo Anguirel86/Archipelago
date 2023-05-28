@@ -104,7 +104,7 @@ class CTJoTLocationManager:
         :return: Configured location object
         """
         location_name = location_entry["name"]
-        location_id = self._name_to_id_mapping[location_name] + self._LOCATION_ID_START
+        location_id = self._name_to_id_mapping[location_name]
         return Location(player, location_name, location_id, region)
 
     def get_filler_location_ids(self, multiworld: MultiWorld, player: int) -> list[int]:
