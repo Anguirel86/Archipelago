@@ -406,7 +406,7 @@ class CTJoTItemManager:
             # Shuffle the list and overwrite from the beginning.
             multiworld.random.shuffle(filler_items)
             for i in range(fragment_count):
-                filler_items[i] = self.create_item("fragment", player)
+                filler_items[i] = self.create_item("Fragment", player)
 
         # If this is a Lost Worlds seed we may need to add some character specific items
         # Bucket fragments can't be chosen
