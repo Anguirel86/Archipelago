@@ -1,5 +1,7 @@
 from BaseClasses import MultiWorld, Region, Location, ItemClassification
 
+from . import CTJoTDefaults
+
 import json
 from typing import NamedTuple
 
@@ -140,8 +142,10 @@ class CTJoTLocationManager:
             filler_location_ids.extend([312, 313])
 
         # Filter out locations chosen for key items
-        locations_from_config = getattr(multiworld, "locations")[player]
-        for location_entry in locations_from_config.value:
+        locations_from_config = getattr(multiworld, "locations")[player].value
+        if len(locations_from_config) == 0:
+            locations_from_config = CTJoTDefaults.DEFAULT_LOCATIONS
+        for location_entry in locations_from_config:
             if location_entry["classification"] != "event":
                 filler_location_ids.remove(
                     self._name_to_id_mapping[location_entry["name"]] - self._LOCATION_ID_START)

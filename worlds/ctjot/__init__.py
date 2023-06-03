@@ -122,9 +122,11 @@ class CTJoTWorld(World):
         # Add victory condition event
         victory_location = Location(self.player, "Victory", None, menu_region)
         victory_location.event = True
-        victory_location.place_locked_item(self._item_manager.create_event_item("Victory", self.player))
         victory_location.access_rule = self._get_access_rule(victory_rules_from_config)
+        victory_location.place_locked_item(self._item_manager.create_event_item("Victory", self.player))
         menu_region.locations.append(victory_location)
+
+        self.multiworld.completion_condition[self.player] = lambda state: state.has("Victory", self.player)
 
         self.multiworld.regions += [menu_region]
 
