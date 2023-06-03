@@ -1,5 +1,7 @@
 from BaseClasses import ItemClassification, Item, MultiWorld
 
+from . import CTJoTDefaults
+
 from enum import IntEnum
 import json
 from typing import NamedTuple
@@ -67,13 +69,17 @@ class CTJoTItemManager:
     _useful_items = ["Fragment"]
 
     # Some items to be used for junk fill in case more items are needed
-    # TODO: Pick real filler items
+    # TODO: May need to pick more filler items at some point.
+    #       We make as many items as we have locations, so these "shouldn't" be
+    #       necessary, but use Mop as a filler just in case.
     _junk_fill_items = ["Mop"]
 
     _characters = ["Crono", "Marle", "Lucca", "Robo", "Frog", "Ayla", "Magus"]
 
-    # TODO: Eventually need to find a better solution than giant lists of item IDs, but I also don't want
-    #        to have to fully reimplement the randomizer's treasure types/logic here.
+    _valid_item_difficulties = ["Easy", "Normal", "Hard"]
+
+    # TODO: I'm not a huge fan of giant lists of item/location IDs, but I also don't want
+    #       to have to fully reimplement the randomizer's treasure types/logic here.
     # Gear/consumable  IDs per item tier.
     _filler_item_tiers = [
         # low gear
@@ -371,6 +377,13 @@ class CTJoTItemManager:
         fragment_count = getattr(multiworld, "fragment_count")[player].value
         game_mode = getattr(multiworld, "game_mode")[player].value
         chosen_locations = getattr(multiworld, "locations")[player].value
+        if len(chosen_locations) == 0:
+            chosen_locations = CTJoTDefaults.DEFAULT_LOCATIONS
+
+        # Default to normal item difficulty if no value was provided
+        # Mostly to satisfy general unit tests that may not give valid default values.
+        if difficulty not in self._valid_item_difficulties:
+            difficulty = "Normal"
 
         for loc_id in location_ids:
             # Figure out which tier the location is part of
@@ -380,14 +393,15 @@ class CTJoTItemManager:
                     loc_tier = tier_locations[0]
                     break
             if loc_tier == LocationTiers.NONE:
-                # Bad location?  Should never get here
-                raise ValueError("ERROR: CTJOT Invalid location id during item creation" + str(loc_id))
+                # This shouldn't be possible, but if it ever happens then raise an exception
+                raise ValueError("ERROR: CTJOT Invalid location id during item creation: " + str(loc_id))
 
             # Get a random item ID for this location and difficulty
-            if loc_tier == LocationTiers.SEALED:
-                distribution = self._sealed_treasures
-            elif tab_treasures:
+            if tab_treasures:
+                # All treasures are tabs if tabsanity is turned on
                 distribution = self._tab_treasures
+            elif loc_tier == LocationTiers.SEALED:
+                distribution = self._sealed_treasures
             else:
                 distribution = self._treasure_distributions[difficulty][loc_tier]
 
@@ -409,18 +423,17 @@ class CTJoTItemManager:
                 filler_items[i] = self.create_item("Fragment", player)
 
         # If this is a Lost Worlds seed we may need to add some character specific items
-        # Bucket fragments can't be chosen
         if game_mode == "Lost worlds":
             items_to_add = []
             # Determine which items we need to add based on what characters are available.
             # Remove items from the filler list to make space for our new items.
             for location in chosen_locations:
-                if location["character"] == "Frog":
+                if "character" in location and location["character"] == "Frog":
                     items_to_add.append(self.create_item("Grand Leon", player))
                     items_to_add.append(self.create_item("Hero Medal", player))
                     filler_items.pop(multiworld.random.randrange(len(filler_items)))
                     filler_items.pop(multiworld.random.randrange(len(filler_items)))
-                elif location["character"] == "Robo":
+                elif "character" in location and location["character"] == "Robo":
                     items_to_add.append(self.create_item("Robo's Rbn", player))
                     filler_items.pop(multiworld.random.randrange(len(filler_items)))
 

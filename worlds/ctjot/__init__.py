@@ -2,6 +2,7 @@ from BaseClasses import Item, Location, MultiWorld, Tutorial, Region, Collection
 from worlds.AutoWorld import World, WebWorld
 
 from .Client import CTJoTSNIClient
+from . import CTJoTDefaults
 from .Items import CTJoTItemManager
 from .Locations import CTJoTLocationManager
 from .Options import Locations, Items, Rules, Victory, GameMode, \
@@ -13,7 +14,6 @@ from typing import Callable
 
 class CTJoTWebWorld(WebWorld):
     settings_page = "https://multiworld.ctjot.com/"
-    # TODO: Figure out these fields
     tutorials = [Tutorial(
         "Multiworld Setup Guide",
         "A guide to playing Jets of Time multiworld.",
@@ -26,14 +26,16 @@ class CTJoTWebWorld(WebWorld):
 
 class CTJoTWorld(World):
     """
-    TODO: Game description here.
+    Jet of Time is an open world randomizer for the iconic JRPG Chrono Trigger.
+
+    Players start with two characters and the winged Epoch and must journey through time finding
+    additional characters and key items to save the world from the evil Lavos.
     """
 
     _item_manager = CTJoTItemManager()
     _location_manager = CTJoTLocationManager()
 
     game = "Chrono Trigger Jets of Time"
-    # option_definitions: Union[OptionList, OptionDict] = {
     option_definitions = {
         "game_mode": GameMode,
         "item_difficulty": ItemDifficulty,
@@ -70,11 +72,11 @@ class CTJoTWorld(World):
 
         Overridden from World
         """
-        items_from_config = getattr(self.multiworld, "items")[self.player]
+        items_from_config = self._get_config_value("items", CTJoTDefaults.DEFAULT_ITEMS)
         items = []
 
         # This handles the key items from the yaml.
-        for item in items_from_config.value:
+        for item in items_from_config:
             items.append(self._item_manager.create_item_by_id(item["id"], self.player))
 
         # Now add filler/useful items to spots that didn't roll key items
@@ -92,13 +94,14 @@ class CTJoTWorld(World):
 
         Overridden from World
         """
-        locations_from_config = getattr(self.multiworld, "locations")[self.player]
-        rules_from_config = getattr(self.multiworld, "rules")[self.player].value
+        locations_from_config = self._get_config_value("locations", CTJoTDefaults.DEFAULT_LOCATIONS)
+        rules_from_config = self._get_config_value("rules", CTJoTDefaults.DEFAULT_RULES)
+        victory_rules_from_config = self._get_config_value("victory", CTJoTDefaults.DEFAULT_VICTORY)
         menu_region = Region("Menu", self.player, self.multiworld)
         menu_region.multiworld = self.multiworld
 
         # Create Location objects from yaml location data and add them to the menu region.
-        for location_entry in locations_from_config.value:
+        for location_entry in locations_from_config:
             if location_entry["classification"] == "event":
                 # Create event locations/items (character pickup locations)
                 location = Location(self.player, location_entry["name"], None, menu_region)
@@ -117,11 +120,10 @@ class CTJoTWorld(World):
         self._location_manager.add_filler_locations(self.multiworld, self.player, menu_region)
 
         # Add victory condition event
-        victory_rules_from_config = getattr(self.multiworld, "victory")[self.player].value
         victory_location = Location(self.player, "Victory", None, menu_region)
         victory_location.event = True
-        victory_location.access_rule = self._get_access_rule(victory_rules_from_config)
         victory_location.place_locked_item(self._item_manager.create_event_item("Victory", self.player))
+        victory_location.access_rule = self._get_access_rule(victory_rules_from_config)
         menu_region.locations.append(victory_location)
 
         self.multiworld.regions += [menu_region]
@@ -143,10 +145,13 @@ class CTJoTWorld(World):
 
     def _get_access_rule(self, access_rules: list[list[str]]) -> Callable[[CollectionState], bool]:
         """
-        Create an access rule function from yaml location data.
+        Create an access rule function from yaml access_rule data.
+
+        :param access_rules: A list contains lists of item/character requirements for this access rule
+        :return: Callable access rule based on the list of requirements
         """
         def can_access(state: CollectionState) -> bool:
-            # No access rules means this is sphere 0
+            # No access rules means this is sphere 1
             if len(access_rules) == 0:
                 return True
 
@@ -165,3 +170,17 @@ class CTJoTWorld(World):
             return False
 
         return can_access
+
+    def _get_config_value(self, value: str, default):
+        """
+        Get a value from the multiworld config for this player. If the value is
+        empty then return the provided default.
+
+        :param value: Name of the value to get from config data
+        :param default: Default value to return if the config value is empty
+        :return: Config value if it exists or default if it doesn't
+        """
+        config_value = getattr(self.multiworld, value)[self.player].value
+        if len(config_value) == 0:
+            return default
+        return config_value

@@ -21,8 +21,6 @@ class CTJoTLocationManager:
     _name_to_id_mapping = {}
 
     # Location lists broken down by time period
-    # TODO: Big lists of IDs is a little hacky.  Need a better way to do this when I'm less lazy.
-    # TODO: 171/172 are pyramid chests. May need special handling for this.
     _locations_prehistory = [174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189]
     _locations_darkages = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     _locations_600ad_1000ad = [15, 54, 55, 56, 57, 58, 59, 60, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72,
@@ -139,7 +137,7 @@ class CTJoTLocationManager:
 
         if game_mode == "Vanilla rando":
             # Add the vanilla rando exclusive Bekkler's tent and Cyrus' Grave locations
-            filler_location_ids.extend([311, 312])
+            filler_location_ids.extend([312, 313])
 
         # Filter out locations chosen for key items
         locations_from_config = getattr(multiworld, "locations")[player]
