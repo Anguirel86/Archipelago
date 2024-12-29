@@ -26,7 +26,9 @@ VICTORY_ADDRESS = 0x7F0020
 LOCATION_ADDRESS = 0xF50100  # already in SNI addressing
 
 # These are already in SNI addressing
-VALIDATION_ADDR = ROM_START + 0x5E0000
+# NOTE: SNI with RetroArch can't read past 4MB in the ROM
+#       Validation data must be before 4MB or the client can't validate/connect to the game
+VALIDATION_ADDR = ROM_START + 0x3F8C03
 VALIDATION_SIZE = 32
 
 # Item and location ID offsets
@@ -35,6 +37,7 @@ ITEM_ID_START = 5100000
 
 # Don't track on the Load Screen(0x00) or Title Screen(0x1B1)
 INVALID_TRACKING_LOCATIONS = [0x00, 0x1B1]
+MAX_MAP_ID = 0x1FF
 
 
 # These are the event flag locations for the baseline (non chronosanity) checks
@@ -543,7 +546,16 @@ class CTJoTSNIClient(SNIClient):
         # Check the player's current location and don't track if they are
         # on either the title screen or the load screen.
         # Current location is stored in two bytes starting at 0x7F0100
-        if int.from_bytes(location_data, "little") in INVALID_TRACKING_LOCATIONS:
+        map_id = int.from_bytes(location_data, "little")
+        if map_id in INVALID_TRACKING_LOCATIONS:
+            return False
+
+        # Sanity check to make sure the map actually exists before tracking
+        # This can catch an issue where the hardware/emulator fills RAM with invalid values before the game loads
+        #
+        # This check is a bit naive, since some maps under this value are also invalid, but it should
+        # work to stop the but where the game auto-completes on connect
+        if map_id >  MAX_MAP_ID:
             return False
 
         # Normal locations (standard randomizer checks)
