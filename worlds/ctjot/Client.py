@@ -598,7 +598,7 @@ class CTJoTSNIClient(SNIClient):
         if data is None or data[0:2] != b"AP":
             return False
 
-        name_end = min(data[5:21].find(b'\00'), 16) + 5
+        name_end = min(data[5:22].find(b'\00'), 16) + 5
         name = data[5:name_end]
         ctx.game = self.game
         # We receive items from other worlds as well as our own world.
