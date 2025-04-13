@@ -32,12 +32,12 @@ class ItemDifficulty(FreeText):
 
 
 class TabTreasures(Toggle):
-    """Don't place dungeon-native items on the dungeon's boss."""
+    """All treasures are replaced with tabs."""
     display_name = "All treasures are tabs"
 
 
 class BucketFragments(Toggle):
-    """Don't place dungeon-native items on the dungeon's boss."""
+    """Enable the placement of Bucket Fragments."""
     display_name = "Enable Bucket Fragments"
 
 
@@ -47,3 +47,8 @@ class FragmentCount(Range):
     range_end = 100
     default = 15
     display_name = "Fragment Count"
+
+
+class SeedShareLink(FreeText):
+    """Game share link from the ctjot web generator"""
+    display_name = "Seed Share Link"

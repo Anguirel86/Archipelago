@@ -5,11 +5,19 @@ from .Client import CTJoTSNIClient
 from . import CTJoTDefaults
 from .Items import CTJoTItemManager
 from .Locations import CTJoTLocationManager
-from .Options import Locations, Items, Rules, Victory, GameMode, \
+from .Options import Locations, Items, Rules, Victory, GameMode, SeedShareLink, \
     ItemDifficulty, TabTreasures, BucketFragments, FragmentCount
 
 import threading
 from typing import Callable
+
+
+class InvalidYamlException(Exception):
+    """
+    Custom exception thrown when we detect that the YAML was not
+    generated using the mutlworld CTJoT web generator.
+    """
+    pass
 
 
 class CTJoTWebWorld(WebWorld):
@@ -37,6 +45,7 @@ class CTJoTWorld(World):
 
     game = "Chrono Trigger Jets of Time"
     option_definitions = {
+        "seed_share_link": SeedShareLink,
         "game_mode": GameMode,
         "item_difficulty": ItemDifficulty,
         "tab_treasures": TabTreasures,
@@ -56,6 +65,14 @@ class CTJoTWorld(World):
     def __init__(self, world: MultiWorld, player: int):
         super().__init__(world, player)
         self.rom_name_available_event = threading.Event()
+
+    def generate_early(self) -> None:
+        """
+        Validate the yaml was created from the CTJoT web generator
+        """
+        share_link = self._get_config_value("seed_share_link", "")
+        if "multiworld.ctjot.com" not in share_link:
+            raise InvalidYamlException("CTJoT YAML files must be generated from https://www.multiworld.ctjot.com")
 
     def create_item(self, name: str) -> Item:
         """
