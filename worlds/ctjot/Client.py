@@ -34,6 +34,7 @@ VALIDATION_SIZE = 32
 # Item and location ID offsets
 LOCATION_ID_START = 5100000
 ITEM_ID_START = 5100000
+MAX_IN_GAME_ITEM_ID = 255
 
 # Don't track on the Load Screen(0x00) or Title Screen(0x1B1)
 INVALID_TRACKING_LOCATIONS = [0x00, 0x1B1]
@@ -504,10 +505,17 @@ class CTJoTSNIClient(SNIClient):
             # zero out the RECEIVE_ITEM_ADDR memory once the item has been awarded.
             data = await snes_read(ctx, cls._convert_to_sni_addressing(RECEIVE_ITEM_ADDR), 1)
             if data is not None and data[0] == 0:
-                snes_buffered_write(
-                    ctx,
-                    cls._convert_to_sni_addressing(RECEIVE_ITEM_ADDR),
-                    bytes([item.item - ITEM_ID_START]))
+
+                # Certain event related AP items are not real in game items.  We want to skip those but still
+                # update the received counter.  This is currently just a concern for the items representing
+                # character pickups.
+                in_game_id = item.item - ITEM_ID_START
+                if in_game_id <= MAX_IN_GAME_ITEM_ID:
+                    snes_buffered_write(
+                        ctx,
+                        cls._convert_to_sni_addressing(RECEIVE_ITEM_ADDR),
+                        bytes([in_game_id]))
+
                 # TODO: Writing this value back manually for now.  Event scripts can only write to a
                 #       very limited range of memory, and this value is outside of that range.
                 #       Maybe use a custom arbitrary ASM function? Find a different event command?

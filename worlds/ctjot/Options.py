@@ -1,9 +1,21 @@
-from Options import FreeText, OptionDict, OptionList, Range, Toggle
+from dataclasses import dataclass
+
+from Options import FreeText, OptionDict, OptionList, Range, Toggle, PerGameCommonOptions
 
 
 class Locations(OptionList):
     """List of locations chosen by the randomizer to hold key items"""
     display_name = "locations"
+
+
+class RegionList(OptionDict):
+    """List of regions and their locations"""
+    display_name = "regions"
+
+
+class CharLocations(OptionList):
+    """Character recruitment locations"""
+    display_name = "char locations"
 
 
 class Items(OptionList):
@@ -52,3 +64,18 @@ class FragmentCount(Range):
 class SeedShareLink(FreeText):
     """Game share link from the ctjot web generator"""
     display_name = "Seed Share Link"
+
+
+@dataclass
+class CTJoTOptions(PerGameCommonOptions):
+    seed_share_link: SeedShareLink
+    game_mode: GameMode
+    item_difficulty: ItemDifficulty
+    tab_treasures: TabTreasures
+    bucket_fragments: BucketFragments
+    fragment_count: FragmentCount
+    items: Items
+    region_list: RegionList
+    char_locations: CharLocations
+    rules: Rules
+    victory: Victory
