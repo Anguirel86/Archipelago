@@ -48,7 +48,6 @@ class CTJoTWorld(World):
     game = "Chrono Trigger Jets of Time"
     options: CTJoTOptions
     options_dataclass = CTJoTOptions
-    settings: typing.ClassVar[CTJoTOptions]
 
     item_name_to_id = _item_manager.get_item_name_to_id_mapping()
     location_name_to_id = _location_manager.get_location_name_to_id_mapping()
