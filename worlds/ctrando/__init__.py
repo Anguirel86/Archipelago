@@ -21,6 +21,7 @@ from ctrando.common import ctenums, ctrom, randostate
 from ctrando.common.ctenums import LocID, RecruitID, ShopID, TreasureID as TID
 from ctrando.entranceshuffler import entrancefiller
 from ctrando.entranceshuffer.locregions import LocRegion
+from ctrando.objectives import objectivetypes
 from ctrando.entranceshuffer.owregions import OWRegion
 from ctrando.entranceshuffer.regionmap import ExitConnector, RegionConnector
 from ctrando.treasures.treasuretypes import Gold
@@ -123,12 +124,68 @@ class CTRandoWorld(World):
         self._create_locations_for_regions(region_dict)
 
         # Create event locations for character recruit pickups
+        self._create_recruit_events(region_dict)
 
-    def _create_recruit_events(self, region_dict):
+        # Create objective events
+        obj_item_names = self._create_objective_events(region_dict)
+
+        # Create victory rule
+
+    _objective_items = [
+        ctenums.ItemID.OBJECTIVE_1, ctenums.ItemID.OBJECTIVE_2,
+        ctenums.ItemID.OBJECTIVE_3, ctenums.ItemID.OBJECTIVE_4,
+        ctenums.ItemID.OBJECTIVE_5, ctenums.ItemID.OBJECTIVE_6,
+        ctenums.ItemID.OBJECTIVE_7, ctenums.ItemID.OBJECTIVE_8]
+
+    def _create_objective_events(self, region_dict: dict[str, RegionData]) -> list[str]:
+        """
+        Create event locations and event items for objective completion.
+        Return a list of objective item names that can be used for
+        the victory rule
+        """
+        objective_dict: dict[ctenums.ItemID, objectivetypes.ObjectiveType] = {}
+        for item in zip(self._objective_items, self.config.objectives):
+            objective_dict[item[0]] = item[1]
+
+        obj_item_names: list[str] = []
+        for name, loc_region in self.region_map.loc_region_dict.items():
+            for reward in loc_region.reward_spots:
+                if reward in self._objective_items:
+                    # Create an event item/location pair for this objective
+                    # TODO: Name conversion based on type?
+                    obj_name = str(self.config.recruit_dict[reward])
+                    ap_region = region_dict[loc_region.name].ap_region
+                    item = Item(obj_name,
+                                ItemClassification.progression,
+                                None,
+                                self.player)
+                    loc = Location(self.player, obj_name, None, ap_region)
+                    loc.event = True
+                    loc.place_locked_item(item)
+                    ap_region.locations.append(loc)
+                    obj_item_names.append(obj_name)
+
+        return obj_item_names
+
+    def _create_recruit_events(self, region_dict: dict[str, RegionData]):
         """
         Create event locations and event items for character recruitment.
         """
-        pass
+        for name, loc_region in self.region_map.loc_region_dict.items():
+            for reward in loc_region.reward_spots:
+                if isinstance(reward, RecruitID):
+                    # Found a recruit spot
+                    if self.config.recruit_dict[reward] is not None:
+                        char_name = str(self.config.recruit_dict[reward])
+                        ap_region = region_dict[loc_region.name].ap_region
+                        item = Item(char_name,
+                                    ItemClassification.progression,
+                                    None,
+                                    self.player)
+                        loc = Location(self.player, char_name, None, ap_region)
+                        loc.event = True
+                        loc.place_locked_item(item)
+                        ap_region.locations.append(loc)
 
     def _create_locations_for_regions(
             self, region_dict: dict[str, RegionData]):
@@ -161,19 +218,17 @@ class CTRandoWorld(World):
                 raise Exception(f"Region not found: {name}")
 
             ap_region = Region(name, self.player, self.multiworld)
-            region_dict[name] = \
-                RegionData(rdi_region=rdi_region, ap_region=ap_region)
+            region_dict[name] = RegionData(
+                rdi_region=rdi_region, ap_region=ap_region)
 
         # Now that all regions are created, connect them up
         # based on the exit layout in the rando config
-        for name, connectors in \
-                self.config.region_map.name_connector_dict.items():
+        for name, connectors in self.config.region_map.name_connector_dict.items():
 
             for connector in connectors:
                 from_region = region_dict[connector.from_region]
                 to_region = region_dict[connector.to_region]
-                entrance_type = EntranceType.TWO_WAY if connector.reversible \
-                    else EntranceType.ONE_WAY
+                entrance_type = EntranceType.TWO_WAY if connector.reversible else EntranceType.ONE_WAY
 
                 # Create the entrance and set up its rule
                 entrance = Entrance(
