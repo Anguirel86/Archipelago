@@ -272,7 +272,8 @@ class CTRandoWorld(World):
 
                 satisfies_rule = True
                 for item in single_rule:
-                    if not state.has(str(item), self.player):
+                    count = single_rule.count(item)
+                    if not state.has(str(item), self.player, count):
                         # At least one condition of this rule isn't met
                         satisfies_rule = False
 
