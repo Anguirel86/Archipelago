@@ -64,7 +64,7 @@ class CTRandoWorld(World):
     """
     TODO: CTRando description here
     """
-    game: str = "Chrono Trigger"
+    game: str = "Rando Dalton Imperial"
     topology_present = True
     options_dataclass = CTRandoOptions
     Options: CTRandoOptions
