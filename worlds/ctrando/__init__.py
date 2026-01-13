@@ -10,7 +10,6 @@ from BaseClasses import CollectionState, Entrance, EntranceType, Item, \
 
 from worlds.AutoWorld import WebWorld, World
 
-
 # APWorld imports
 from .Options import CTRandoOptions
 
@@ -71,8 +70,13 @@ class CTRandoWorld(World):
 
     web = CTRandoWebWorld()
 
-    rando_settings: arguments.Settings = None
-    rando_config: randostate.ConfigState = None
+    rdi_settings: arguments.Settings = None
+    config: randostate.ConfigState = None
+
+    item_name_to_id = {str(item): ITEM_ID_BASE +
+                       item for item in ctenums.ItemID}
+    location_name_to_id = {str(loc): ITEM_ID_BASE +
+                           loc for loc in ctenums.TreasureID}
 
     def __init__(self, world: Multiworld, player: int):
         super().__init__(world, player)
@@ -93,14 +97,15 @@ class CTRandoWorld(World):
         #       extract_settings function in the randomizer?
         self._translate_settings()
         ct_rom = ctrom.CTRom.from_file(self._get_rom_path())
-        self.rando_config = randomizer.get_random_config(self.settings, ct_rom)
+        self.config = randomizer.get_random_config(
+            self.rdi_settings, ct_rom)
 
     def create_items(self) -> None:
         """
         Create the multiworld items for this player
         """
         items = []
-        for value in self.rando_config.treasure_assignment.values():
+        for value in self.config.treasure_assignment.values():
             if isinstance(value, Gold):
                 # TODO: Handle gold rewards
                 #       I'm not sure it's possible to send arbitrary numbers
@@ -110,8 +115,6 @@ class CTRandoWorld(World):
                 items.append(self._create_AP_item(value))
 
         self.multiworld.itempool += items
-
-        # TODO: Create event items for characters and memory flags
 
     def create_regions(self) -> None:
         """
@@ -137,7 +140,8 @@ class CTRandoWorld(World):
         ctenums.ItemID.OBJECTIVE_5, ctenums.ItemID.OBJECTIVE_6,
         ctenums.ItemID.OBJECTIVE_7, ctenums.ItemID.OBJECTIVE_8]
 
-    def _create_objective_events(self, region_dict: dict[str, RegionData]) -> list[str]:
+    def _create_objective_events(
+            self, region_dict: dict[str, RegionData]) -> list[str]:
         """
         Create event locations and event items for objective completion.
         Return a list of objective item names that can be used for
@@ -302,7 +306,7 @@ class CTRandoWorld(World):
         """
         Set up a randomizer Settings object with the user's chosen AP options
         """
-        self.setting = arguments.Settings()
+        self.rdi_settings = arguments.Settings()
         # TODO: Convert AP yaml options to equivalent settings here
         # TODO: Add rom location to settings
 
