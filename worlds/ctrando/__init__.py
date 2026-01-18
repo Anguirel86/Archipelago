@@ -10,27 +10,27 @@ from BaseClasses import CollectionState, Entrance, EntranceType, Item, \
 
 from worlds.AutoWorld import WebWorld, World
 
-# APWorld imports
+# Local APWorld imports
 from .Options import CTRandoOptions
 
-# Randomizer imports
+# RDI randomizer imports
 from ctrando import randomizer
 from ctrando.arguments import arguments
-from ctrando.common import ctenums, ctrom, randostate
-from ctrando.common.ctenums import LocID, RecruitID, ShopID, TreasureID as TID
+from ctrando.common import ctenums, ctrom, memory, randostate
+from ctrando.common.ctenums import (
+    ItemID, BossSpotID, RecruitID,  TreasureID as TID)
 from ctrando.entranceshuffler import entrancefiller
 from ctrando.entranceshuffer.locregions import LocRegion
-from ctrando.objectives import objectivetypes
 from ctrando.entranceshuffer.owregions import OWRegion
 from ctrando.entranceshuffer.regionmap import ExitConnector, RegionConnector
+from ctrando.logic import logictypes
+from ctrando.objectives import objectivetypes
 from ctrando.treasures.treasuretypes import Gold
 
 
 # TODO task list:
 #  - Create settings class
 #  - Add Options handing
-#  - Finish definitions for characer items/events
-#  - Victory condition
 #  - Create client
 #  - Create tutorial docs
 #  - General organization/cleanup pass, add helper classes, etc
@@ -65,6 +65,7 @@ class CTRandoWorld(World):
     """
     game: str = "Rando Dalton Imperial"
     topology_present = True
+    origin_region_name = "starting_rewards"
     options_dataclass = CTRandoOptions
     Options: CTRandoOptions
 
@@ -74,9 +75,9 @@ class CTRandoWorld(World):
     config: randostate.ConfigState = None
 
     item_name_to_id = {str(item): ITEM_ID_BASE +
-                       item for item in ctenums.ItemID}
+                       item for item in ItemID}
     location_name_to_id = {str(loc): ITEM_ID_BASE +
-                           loc for loc in ctenums.TreasureID}
+                           loc for loc in TID}
 
     def __init__(self, world: Multiworld, player: int):
         super().__init__(world, player)
@@ -123,53 +124,124 @@ class CTRandoWorld(World):
         # Create regions and connecting exits
         region_dict = self._create_region_map()
 
-        # Create treasure locations
+        # TODO: Might be able to optimize this a bit and roll some of these
+        #       helper functions together.  Reduce looping over regions.
+
+        # Create treasure locations and game/logic event locations
         self._create_locations_for_regions(region_dict)
-
-        # Create event locations for character recruit pickups
         self._create_recruit_events(region_dict)
+        self._create_flag_events(region_dict)
 
-        # Create objective events
-        obj_item_names = self._create_objective_events(region_dict)
+        # Create victory location
+        start_region = region_dict["starter_rewards"].ap_region
+        victory_loc = Location(self.player, "Victory", None, start_region)
+        victory_loc.event = True
+        victory_loc.access_rule = self._create_victory_rule()
+        start_region.locations.append(victory_loc)
 
-        # Create victory rule
-
-    _objective_items = [
-        ctenums.ItemID.OBJECTIVE_1, ctenums.ItemID.OBJECTIVE_2,
-        ctenums.ItemID.OBJECTIVE_3, ctenums.ItemID.OBJECTIVE_4,
-        ctenums.ItemID.OBJECTIVE_5, ctenums.ItemID.OBJECTIVE_6,
-        ctenums.ItemID.OBJECTIVE_7, ctenums.ItemID.OBJECTIVE_8]
-
-    def _create_objective_events(
-            self, region_dict: dict[str, RegionData]) -> list[str]:
+    def _create_victory_rule(self) -> Callable[[CollectionState], bool]:
         """
-        Create event locations and event items for objective completion.
-        Return a list of objective item names that can be used for
-        the victory rule
+        Create a victory rule for this game.
+        Victory occurs when the player has completed the required objectives
+        and collected the right items/characters to reach and defeat Lavos.
         """
-        objective_dict: dict[ctenums.ItemID, objectivetypes.ObjectiveType] = {}
-        for item in zip(self._objective_items, self.config.objectives):
-            objective_dict[item[0]] = item[1]
 
-        obj_item_names: list[str] = []
+        def victory(state: CollectionState) -> bool:
+            # Get objective count
+            obj_tokens = ["Objective 1", "Objective 2",
+                          "Objective 3", "Objective 4",
+                          "Objective 5", "Objective 6",
+                          "Objective 7", "Objective 8"]
+
+            num_objs_complete = 0
+            for obj in obj_tokens:
+                if state.has(obj):
+                    num_objs_complete = num_objs_complete + 1
+
+            # Objective based access
+            algetty_portal_open = num_objs_complete >= self.rdi_settings.num_algetty_portal_objectives
+            omen_open = num_objs_complete >= self.rdi_settings.num_omen_objectives
+            bucket_open = num_objs_complete >= self.rdi_settings.num_bucket_objectives
+            timegauge_1999_open = num_objs_complete >= self.rdi_settings.num_timegauge_objectives
+
+            # Location access
+            has_eot = state.has(
+                str(memory.Flags.HAS_EOT_TIMEGAUGE_ACCESS), self.player)
+
+            # Build up the access rules to lavos
+            # End of Time -> Bucket
+            if has_eot and bucket_open:
+                return True
+
+            # Hard Lavos - TODO: Do we actually want to include this in logic?
+            ocean_palace_access = state.has(
+                str(QuestID.ZEAL_PALACE_THRONE), self.player)
+            ruby_knife = state.has(str(ItemID.RUBY_KNIFE), self.player)
+            if ocean_palace_access and ruby_knife:
+                return True
+
+            # Crash Epoch into lavos in 1999
+            has_flight = state.has(str(ScriptReward.FLIGHT), self.player)
+            if has_flight and timegauge_1999_open:
+                return True
+
+            # Black Omen
+            if has_flight and algetty_portal_open and omen_open:
+                return True
+
+            return False
+
+        return victory
+
+    def _create_flag_events(self, region_dict: dict[str, RegionData]):
+        """
+        Create event items/locations for script and memory flag rewards.
+        These are used internally by the logic rules to gate access by some
+        in-game event rather than holding an item or character.
+
+        Ignore shop rewards
+        """
         for name, loc_region in self.region_map.loc_region_dict.items():
             for reward in loc_region.reward_spots:
-                if reward in self._objective_items:
-                    # Create an event item/location pair for this objective
-                    # TODO: Name conversion based on type?
-                    obj_name = str(self.config.recruit_dict[reward])
-                    ap_region = region_dict[loc_region.name].ap_region
-                    item = Item(obj_name,
-                                ItemClassification.progression,
-                                None,
-                                self.player)
-                    loc = Location(self.player, obj_name, None, ap_region)
-                    loc.event = True
-                    loc.place_locked_item(item)
-                    ap_region.locations.append(loc)
-                    obj_item_names.append(obj_name)
+                if isinstance(reward, logictypes.ScriptReward) or
+                        isinstance(reward, memory.Flags) or
+                        isinstance(reward, BossSpotID) or
+                        isinstance(reward, ItemID):
+                    self._create_event_loc_item_pair(
+                        str(reward), region_dict[loc_region.name].ap_region)
 
-        return obj_item_names
+
+    # TODO: Maybe not needed?  Might be able to use the existing objective
+    #       items in the region graph
+    #_objective_items=[
+    #    ctenums.ItemID.OBJECTIVE_1, ctenums.ItemID.OBJECTIVE_2,
+    #    ctenums.ItemID.OBJECTIVE_3, ctenums.ItemID.OBJECTIVE_4,
+    #    ctenums.ItemID.OBJECTIVE_5, ctenums.ItemID.OBJECTIVE_6,
+    #    ctenums.ItemID.OBJECTIVE_7, ctenums.ItemID.OBJECTIVE_8]
+
+    #def _create_objective_events(
+    #        self, region_dict: dict[str, RegionData]) -> list[str]:
+    #    """
+    #    Create event locations and event items for objective completion.
+    #    Return a list of objective item names that can be used for
+    #    the victory rule
+    #    """
+    #    objective_dict: dict[ctenums.ItemID, objectivetypes.ObjectiveType]={}
+    #    for item in zip(self._objective_items, self.config.objectives):
+    #        objective_dict[item[0]]=item[1]
+
+    #    obj_item_names: list[str]=[]
+    #    for name, loc_region in self.region_map.loc_region_dict.items():
+    #        for reward in loc_region.reward_spots:
+    #            if reward in self._objective_items:
+    #                # Create an event item/location pair for this objective
+    #                # TODO: Name conversion based on type?
+    #                obj_name=str(reward)
+    #                ap_region=region_dict[loc_region.name].ap_region
+    #                self._create_event_loc_item_pair(obj_name, ap_region)
+    #                obj_item_names.append(obj_name)
+
+    #    return obj_item_names
 
     def _create_recruit_events(self, region_dict: dict[str, RegionData]):
         """
@@ -180,16 +252,9 @@ class CTRandoWorld(World):
                 if isinstance(reward, RecruitID):
                     # Found a recruit spot
                     if self.config.recruit_dict[reward] is not None:
-                        char_name = str(self.config.recruit_dict[reward])
-                        ap_region = region_dict[loc_region.name].ap_region
-                        item = Item(char_name,
-                                    ItemClassification.progression,
-                                    None,
-                                    self.player)
-                        loc = Location(self.player, char_name, None, ap_region)
-                        loc.event = True
-                        loc.place_locked_item(item)
-                        ap_region.locations.append(loc)
+                        char_name=str(self.config.recruit_dict[reward])
+                        ap_region=region_dict[loc_region.name].ap_region
+                        self._create_event_loc_item_pair(char_name, ap_region)
 
     def _create_locations_for_regions(
             self, region_dict: dict[str, RegionData]):
@@ -202,7 +267,7 @@ class CTRandoWorld(World):
                 for loc in region_data.rdi_region.reward_spots:
                     if isinstance(loc, TID):
                         # TODO: Filter out locations with gold rewards
-                        location = Location(
+                        location=Location(
                             self.player, str(loc), None, region_data.ap_region)
                         region_data.ap_region.locations.append(location)
 
@@ -211,18 +276,18 @@ class CTRandoWorld(World):
         Create a corresponding AP Region definition for every RDI region
         and wire up the exits
         """
-        region_dict: dict[str, RegionData] = {}
+        region_dict: dict[str, RegionData]={}
 
         for name in self.config.region_map.name_connector_dict.keys():
             if name in self.config.region_map.ow_region_dict:
-                rdi_region = self.config.region_map.ow_region_dict[name]
+                rdi_region=self.config.region_map.ow_region_dict[name]
             elif name in self.config.region_map.loc_region_dict:
-                rdi_region = self.config.region_map.loc_region_dict[name]
+                rdi_region=self.config.region_map.loc_region_dict[name]
             else:
                 raise Exception(f"Region not found: {name}")
 
-            ap_region = Region(name, self.player, self.multiworld)
-            region_dict[name] = RegionData(
+            ap_region=Region(name, self.player, self.multiworld)
+            region_dict[name]=RegionData(
                 rdi_region=rdi_region, ap_region=ap_region)
 
         # Now that all regions are created, connect them up
@@ -230,21 +295,35 @@ class CTRandoWorld(World):
         for name, connectors in self.config.region_map.name_connector_dict.items():
 
             for connector in connectors:
-                from_region = region_dict[connector.from_region]
-                to_region = region_dict[connector.to_region]
-                entrance_type = EntranceType.TWO_WAY if connector.reversible else EntranceType.ONE_WAY
+                from_region=region_dict[connector.from_region]
+                to_region=region_dict[connector.to_region]
+                entrance_type=EntranceType.TWO_WAY if connector.reversible else EntranceType.ONE_WAY
 
                 # Create the entrance and set up its rule
-                entrance = Entrance(
+                entrance=Entrance(
                     self.player,
                     connector.link_name,
                     from_region.ap_region,
                     0,
                     entrance_type)
-                entrance.access_rule = self._create_access_rule(connector)
+                entrance.access_rule=self._create_access_rule(connector)
                 entrance.connect(to_region)
 
         return region_dict
+
+    def _create_event_loc_item_pair(self, name: str, region: Region):
+        """
+        Create an event location with a locked event item
+        """
+        item=Item(name,
+                    ItemClassification.progression,
+                    None,
+                    self.player)
+
+        loc=Location(self.player, name, None, region)
+        loc.event=True
+        loc.place_locked_item(item)
+        region.locations.append(loc)
 
     def get_filler_item_name(self) -> str:
         """
@@ -274,12 +353,12 @@ class CTRandoWorld(World):
         def can_access(state: CollectionState) -> bool:
             for single_rule in connector.get_access_rule():
 
-                satisfies_rule = True
+                satisfies_rule=True
                 for item in single_rule:
-                    count = single_rule.count(item)
+                    count=single_rule.count(item)
                     if not state.has(str(item), self.player, count):
                         # At least one condition of this rule isn't met
-                        satisfies_rule = False
+                        satisfies_rule=False
 
                 if satisfies_rule:
                     return True
@@ -294,19 +373,19 @@ class CTRandoWorld(World):
         """
         # TODO: Handle item classification for additional key items
         if item in entrancefiller.get_forced_key_items():
-            classification = ItemClassification.progression
+            classification=ItemClassification.progression
         else:
-            classification = ItemClassification.filler
+            classification=ItemClassification.filler
         # TODO: Additional classifications? Useful?
 
-        item_code = ITEM_ID_BASE + item
+        item_code=ITEM_ID_BASE + item
         return Item(str(item), classification, item_code, self.player)
 
     def _translate_settings(self):
         """
         Set up a randomizer Settings object with the user's chosen AP options
         """
-        self.rdi_settings = arguments.Settings()
+        self.rdi_settings=arguments.Settings()
         # TODO: Convert AP yaml options to equivalent settings here
         # TODO: Add rom location to settings
 
@@ -315,7 +394,7 @@ class CTRandoWorld(World):
         """
         Get the path to the Chrono Trigger ROM
         """
-        file_name = CTRandoWorld.settings.rom_file
+        file_name=CTRandoWorld.settings.rom_file
 
         if not os.path.exists(file_name):
             # TODO: Refine error text
