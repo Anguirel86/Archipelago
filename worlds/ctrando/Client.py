@@ -65,7 +65,7 @@ class RDIClient(SNIClient):
         """
         chest_data_start = TREASURE_BASE_ADDR - EVENT_BASE_ADDR
         byte_offset = chest_index // 8
-        bit = chest_index % 8
+        bit = 1 << (chest_index % 8)
 
         return (event_data[chest_data_start + byte_offset] & bit) > 0
 
