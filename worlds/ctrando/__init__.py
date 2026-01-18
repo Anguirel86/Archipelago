@@ -133,7 +133,7 @@ class CTRandoWorld(World):
         self._create_flag_events(region_dict)
 
         # Create victory location
-        start_region = region_dict["starter_rewards"].ap_region
+        start_region = region_dict[self.origin_region_name].ap_region
         victory_loc = Location(self.player, "Victory", None, start_region)
         victory_loc.event = True
         victory_loc.access_rule = self._create_victory_rule()
