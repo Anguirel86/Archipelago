@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 from typing import Callable
 import os
 
 # Archipelago imports
+import settings
+import worlds
+
 from BaseClasses import CollectionState, Entrance, EntranceType, Item, \
     ItemClassification, Location, Multiworld, Region, Tutorial
+
+from Utils import read_snes_rom
 
 from worlds.AutoWorld import WebWorld, World
 
@@ -24,12 +30,11 @@ from ctrando.entranceshuffer.locregions import LocRegion
 from ctrando.entranceshuffer.owregions import OWRegion
 from ctrando.entranceshuffer.regionmap import ExitConnector, RegionConnector
 from ctrando.logic import logictypes
-from ctrando.objectives import objectivetypes
+from ctrando.objectives import objectivetypes as objty
 from ctrando.treasures.treasuretypes import Gold
 
 
 # TODO task list:
-#  - Create settings class
 #  - Add Options handing
 #  - Create client
 #  - Create tutorial docs
@@ -39,6 +44,25 @@ from ctrando.treasures.treasuretypes import Gold
 # TODO: Pick a real item ID offset
 # Offset to give CTRando items a unique item range in AP
 ITEM_ID_BASE = 50_350_000
+CTUSA_MD5_HASH = "a2bc447961e52fd2227baed164f729dc"
+
+
+class RDIDeltaPatch(worlds.Files.APDeltaPatch):
+    hash = CTUSA_MD5_HASH
+    game = "Chrono Trigger"
+    patch_file_ending = ".apctrdi"
+
+    @classmethod
+    def get_source_data(cls) -> bytes:
+        return CTRandoWorld.get_base_rom_bytes()
+
+
+class RDISettings(settings.Group):
+    class RomFile(settings.SNESRomPath):
+        """File name of the CT ROM"""
+        description = "Chrono Trigger (USA) ROM"
+        copy_to = "Chrono Trigger (USA).sfc"
+        md5s = [RDIDeltaPatch.hash]
 
 
 class CTRandoWebWorld(WebWorld):
@@ -97,7 +121,7 @@ class CTRandoWorld(World):
         # TODO: Maybe convert yaml options so we can use the built-in
         #       extract_settings function in the randomizer?
         self._translate_settings()
-        ct_rom = ctrom.CTRom.from_file(self._get_rom_path())
+        ct_rom = ctrom.CTRom.from_file(self.get_rom_path())
         self.config = randomizer.get_random_config(
             self.rdi_settings, ct_rom)
 
@@ -139,6 +163,9 @@ class CTRandoWorld(World):
         victory_loc.access_rule = self._create_victory_rule()
         start_region.locations.append(victory_loc)
 
+        # Add all regions to the multiworld object
+        self.multiworld.regions += [x.ap_region for x in region_dict.values()]
+
     def _create_victory_rule(self) -> Callable[[CollectionState], bool]:
         """
         Create a victory rule for this game.
@@ -175,13 +202,14 @@ class CTRandoWorld(World):
 
             # Hard Lavos - TODO: Do we actually want to include this in logic?
             ocean_palace_access = state.has(
-                str(QuestID.ZEAL_PALACE_THRONE), self.player)
+                str(objty.QuestID.ZEAL_PALACE_THRONE), self.player)
             ruby_knife = state.has(str(ItemID.RUBY_KNIFE), self.player)
             if ocean_palace_access and ruby_knife:
                 return True
 
             # Crash Epoch into lavos in 1999
-            has_flight = state.has(str(ScriptReward.FLIGHT), self.player)
+            has_flight = state.has(
+                str(logictypes.ScriptReward.FLIGHT), self.player)
             if has_flight and timegauge_1999_open:
                 return True
 
@@ -203,45 +231,12 @@ class CTRandoWorld(World):
         """
         for name, loc_region in self.region_map.loc_region_dict.items():
             for reward in loc_region.reward_spots:
-                if isinstance(reward, logictypes.ScriptReward) or
-                        isinstance(reward, memory.Flags) or
-                        isinstance(reward, BossSpotID) or
+                if isinstance(reward, logictypes.ScriptReward) or \
+                        isinstance(reward, memory.Flags) or \
+                        isinstance(reward, BossSpotID) or \
                         isinstance(reward, ItemID):
                     self._create_event_loc_item_pair(
                         str(reward), region_dict[loc_region.name].ap_region)
-
-
-    # TODO: Maybe not needed?  Might be able to use the existing objective
-    #       items in the region graph
-    #_objective_items=[
-    #    ctenums.ItemID.OBJECTIVE_1, ctenums.ItemID.OBJECTIVE_2,
-    #    ctenums.ItemID.OBJECTIVE_3, ctenums.ItemID.OBJECTIVE_4,
-    #    ctenums.ItemID.OBJECTIVE_5, ctenums.ItemID.OBJECTIVE_6,
-    #    ctenums.ItemID.OBJECTIVE_7, ctenums.ItemID.OBJECTIVE_8]
-
-    #def _create_objective_events(
-    #        self, region_dict: dict[str, RegionData]) -> list[str]:
-    #    """
-    #    Create event locations and event items for objective completion.
-    #    Return a list of objective item names that can be used for
-    #    the victory rule
-    #    """
-    #    objective_dict: dict[ctenums.ItemID, objectivetypes.ObjectiveType]={}
-    #    for item in zip(self._objective_items, self.config.objectives):
-    #        objective_dict[item[0]]=item[1]
-
-    #    obj_item_names: list[str]=[]
-    #    for name, loc_region in self.region_map.loc_region_dict.items():
-    #        for reward in loc_region.reward_spots:
-    #            if reward in self._objective_items:
-    #                # Create an event item/location pair for this objective
-    #                # TODO: Name conversion based on type?
-    #                obj_name=str(reward)
-    #                ap_region=region_dict[loc_region.name].ap_region
-    #                self._create_event_loc_item_pair(obj_name, ap_region)
-    #                obj_item_names.append(obj_name)
-
-    #    return obj_item_names
 
     def _create_recruit_events(self, region_dict: dict[str, RegionData]):
         """
@@ -252,8 +247,8 @@ class CTRandoWorld(World):
                 if isinstance(reward, RecruitID):
                     # Found a recruit spot
                     if self.config.recruit_dict[reward] is not None:
-                        char_name=str(self.config.recruit_dict[reward])
-                        ap_region=region_dict[loc_region.name].ap_region
+                        char_name = str(self.config.recruit_dict[reward])
+                        ap_region = region_dict[loc_region.name].ap_region
                         self._create_event_loc_item_pair(char_name, ap_region)
 
     def _create_locations_for_regions(
@@ -267,7 +262,7 @@ class CTRandoWorld(World):
                 for loc in region_data.rdi_region.reward_spots:
                     if isinstance(loc, TID):
                         # TODO: Filter out locations with gold rewards
-                        location=Location(
+                        location = Location(
                             self.player, str(loc), None, region_data.ap_region)
                         region_data.ap_region.locations.append(location)
 
@@ -276,18 +271,18 @@ class CTRandoWorld(World):
         Create a corresponding AP Region definition for every RDI region
         and wire up the exits
         """
-        region_dict: dict[str, RegionData]={}
+        region_dict: dict[str, RegionData] = {}
 
         for name in self.config.region_map.name_connector_dict.keys():
             if name in self.config.region_map.ow_region_dict:
-                rdi_region=self.config.region_map.ow_region_dict[name]
+                rdi_region = self.config.region_map.ow_region_dict[name]
             elif name in self.config.region_map.loc_region_dict:
-                rdi_region=self.config.region_map.loc_region_dict[name]
+                rdi_region = self.config.region_map.loc_region_dict[name]
             else:
                 raise Exception(f"Region not found: {name}")
 
-            ap_region=Region(name, self.player, self.multiworld)
-            region_dict[name]=RegionData(
+            ap_region = Region(name, self.player, self.multiworld)
+            region_dict[name] = RegionData(
                 rdi_region=rdi_region, ap_region=ap_region)
 
         # Now that all regions are created, connect them up
@@ -295,18 +290,18 @@ class CTRandoWorld(World):
         for name, connectors in self.config.region_map.name_connector_dict.items():
 
             for connector in connectors:
-                from_region=region_dict[connector.from_region]
-                to_region=region_dict[connector.to_region]
-                entrance_type=EntranceType.TWO_WAY if connector.reversible else EntranceType.ONE_WAY
+                from_region = region_dict[connector.from_region]
+                to_region = region_dict[connector.to_region]
+                entrance_type = EntranceType.TWO_WAY if connector.reversible else EntranceType.ONE_WAY
 
                 # Create the entrance and set up its rule
-                entrance=Entrance(
+                entrance = Entrance(
                     self.player,
                     connector.link_name,
                     from_region.ap_region,
                     0,
                     entrance_type)
-                entrance.access_rule=self._create_access_rule(connector)
+                entrance.access_rule = self._create_access_rule(connector)
                 entrance.connect(to_region)
 
         return region_dict
@@ -315,13 +310,13 @@ class CTRandoWorld(World):
         """
         Create an event location with a locked event item
         """
-        item=Item(name,
+        item = Item(name,
                     ItemClassification.progression,
                     None,
                     self.player)
 
-        loc=Location(self.player, name, None, region)
-        loc.event=True
+        loc = Location(self.player, name, None, region)
+        loc.event = True
         loc.place_locked_item(item)
         region.locations.append(loc)
 
@@ -353,12 +348,12 @@ class CTRandoWorld(World):
         def can_access(state: CollectionState) -> bool:
             for single_rule in connector.get_access_rule():
 
-                satisfies_rule=True
+                satisfies_rule = True
                 for item in single_rule:
-                    count=single_rule.count(item)
+                    count = single_rule.count(item)
                     if not state.has(str(item), self.player, count):
                         # At least one condition of this rule isn't met
-                        satisfies_rule=False
+                        satisfies_rule = False
 
                 if satisfies_rule:
                     return True
@@ -373,31 +368,52 @@ class CTRandoWorld(World):
         """
         # TODO: Handle item classification for additional key items
         if item in entrancefiller.get_forced_key_items():
-            classification=ItemClassification.progression
+            classification = ItemClassification.progression
         else:
-            classification=ItemClassification.filler
+            classification = ItemClassification.filler
         # TODO: Additional classifications? Useful?
 
-        item_code=ITEM_ID_BASE + item
+        item_code = ITEM_ID_BASE + item
         return Item(str(item), classification, item_code, self.player)
 
     def _translate_settings(self):
         """
         Set up a randomizer Settings object with the user's chosen AP options
         """
-        self.rdi_settings=arguments.Settings()
+        self.rdi_settings = arguments.Settings()
         # TODO: Convert AP yaml options to equivalent settings here
         # TODO: Add rom location to settings
 
     @staticmethod
-    def _get_rom_path() -> str:
+    def get_rom_path() -> str:
         """
         Get the path to the Chrono Trigger ROM
         """
-        file_name=CTRandoWorld.settings.rom_file
+        file_name = CTRandoWorld.settings.rom_file
 
         if not os.path.exists(file_name):
             # TODO: Refine error text
             raise ValueError("No Chrono Trigger ROM specified")
 
         return file_name
+
+    @staticmethod
+    def get_base_rom_bytes(file_name: str = "") -> bytes:
+        """
+        Get the base ROM data as a bytes object
+        """
+        base_rom_bytes = getattr(
+            CTRandoWorld.get_base_rom_bytes, "base_rom_bytes", None)
+        if not base_rom_bytes:
+            file_name = CTRandoWorld.get_rom_path()
+            base_rom_bytes = bytes(read_snes_rom(open(file_name, "rb")))
+
+            basemd5 = hashlib.md5()
+            basemd5.update(base_rom_bytes)
+            if basemd5.hexdigest() != CTUSA_MD5_HASH:
+                raise Exception(
+                    'Supplied base ROM does not match the known MD5 hash')
+
+            CTRandoWorld.get_base_rom_bytes.base_rom_bytes = base_rom_bytes
+
+        return base_rom_bytes
