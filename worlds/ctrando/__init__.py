@@ -121,9 +121,10 @@ class CTRandoWorld(World):
         # TODO: Maybe convert yaml options so we can use the built-in
         #       extract_settings function in the randomizer?
         self._translate_settings()
-        ct_rom = ctrom.CTRom.from_file(self.get_rom_path())
+        base_rom = ctrom.CTRom.from_file(self.get_rom_path())
+        self.ct_rom = randomizer.ctrom.CTROM(base_rom.getvalue())
         self.config = randomizer.get_random_config(
-            self.rdi_settings, ct_rom)
+            self.rdi_settings, self.ct_rom)
 
     def create_items(self) -> None:
         """
@@ -331,7 +332,28 @@ class CTRandoWorld(World):
         pass
 
     # TODO: Finish defining this
-    # def generate_output(self,
+    def generate_output(self, output_directory: str):
+        """
+        Generate the randomized ROM and create the patch file
+        """
+
+        out_rom = randomizer.get_ctrom_from_config(
+            self.ct_rom, self.rdi_settings, self.config)
+
+        basename = self.multiworld.get_out_file_name_base(self.player)
+        output_path = os.path.join(output_directory, f"{basename}.sfc")
+
+        with open(output_path, "wb") as file:
+            file.write(out_rom.getbuffer())
+
+        patch = RDIDeltaPatch(
+            os.path.splittext(output_path)[0]+RDIDeltaPatch.patch_file_ending,
+            player=self.player,
+            player_name=self.multiworld.player_name[self.player],
+            patched_path=output_path)
+
+        patch.write()
+        os.unlink(output_path)
 
     def _create_access_rule(
         self,
