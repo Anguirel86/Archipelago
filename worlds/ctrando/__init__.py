@@ -326,7 +326,7 @@ class CTRandoWorld(World):
         Get a random filler item
         """
         # TODO: Real filler items - Ideally this will never be needed
-        return self._create_AP_item(ctenums.ItenID.MOP)
+        return self._create_AP_item(ctenums.ItemID.MOP)
 
     def modify_multidata(self, multidata: dict):
         pass
