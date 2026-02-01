@@ -31,9 +31,9 @@ class TechOrder(Choice):
     """ Order in which techs are learned"""
     display_name = "Tech Order"
     option_vanilla = 0
-    option_random = 1
-    mp = 2
-    mp_type = 3
+    option_random_order = 1
+    option_mp = 2
+    option_mp_type = 3
     default = 0
 
 
@@ -42,7 +42,7 @@ class ShowFullTechList(Toggle):
     display_name = "Show Full Tech List"
 
 
-class CTRandoOptions(PerGameCommonOptions):
+class CTRDIOptions(PerGameCommonOptions):
     xp_scale: XpScale
     tp_scale: TpScale
     tech_order: TechOrder

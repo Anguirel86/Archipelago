@@ -1,5 +1,7 @@
 from dataclass import dataclass
 import logging
+import typing
+from typing import override
 
 from NetUtils import ClientStatus, NetworkItem
 from SNIClient import SNIContext
@@ -29,8 +31,10 @@ SRAM_START = 0xE00000
 EVENT_BLOCK_SIZE = 0x200
 EVENT_BASE_ADDR = 0x7F0000
 TREASURE_BASE_ADDR = 0x7F0001
-RECEIVE_ITEM_ADDR = 0x7E287A  # TODO: Update this - JoT value
+RECEIVED_ITEM_ADDR = 0x7E287A  # TODO: Update this - JoT value
 RECEIVED_ITEM_CNT = 0x7E287C  # TODO: Update this - JoT value
+VICTORY_ADDR = 0x00  # TODO: Get real victory flag ADDR
+VICTORY_FLAG = 0x01  # TODO: Get real victory flag bit
 
 LOCATION_ADDR = 0xF50100  # Already in SNI address space
 
@@ -170,12 +174,12 @@ _script_locations: dict[TID, Flags | CheckCounter] = {
 }
 
 
-class RDIClient(SNIClient):
+class CTRDIClient(SNIClient):
     """
     Game client for Chrono Trigger Rando Dalton Imperial
     """
 
-    game = "Chrono Trigger Rando Dalton Imperial"
+    game = "Chrono Trigger: Rando Dalton Imperial"
 
     _loc_name_to_id = {str(loc): ITEM_ID_BASE + loc for loc in TID}
 
@@ -200,6 +204,7 @@ class RDIClient(SNIClient):
 
         return (event_data[chest_data_start + byte_offset] & bit) > 0
 
+    @staticmethod
     def _is_script_treasure_collected(event_data, loc: TID) -> bool:
         """
         Check if a script based treasure has been collected
@@ -216,21 +221,15 @@ class RDIClient(SNIClient):
             # Counter type check
             return event_data[offset] >= check_data.count
 
-    async def _track_locations(self, ctx: SNIContext) -> bool:
+    def _can_track(
+            self,
+            ctx: SNIContext,
+            event_data: typing.Optional[bytes],
+            map_data: typing.Optional[bytes]) -> bool:
         """
-        Track which locations the player has collected.
+        Check if the game is in a valid state for tracking.
+        Tracking isn't valid on some maps or during certain cutscenes.
         """
-        from SNIClient import snes_read
-
-        if not ctx.allow_collect or ctx.server is None or ctx.slot is None:
-            # Client isn't fully connected yet
-            return False
-
-        # Read the map and event data needed for subsequent checks
-        map_data = await snes_read(ctx, LOCATION_ADDR, 2)
-        event_data = await snes_read(
-            ctx,
-            self._convert_to_sni_addressing(EVENT_BASE_ADDR), EVENT_BLOCK_SIZE)
 
         if map_data is None or event_data is None:
             # Error during read?
@@ -252,10 +251,17 @@ class RDIClient(SNIClient):
         # data loaded and isn't just junk from the system turning on.
         #
         # This tries to fix an issue where the game auto-completes on connect
-        # due to junk data in memory.
+        # due to junk data in memory on flashcarts.
         if map_id > MAX_MAP_ID:
             return False
 
+    def _track_locations(
+            self,
+            ctx: SNIContext,
+            event_data: typing.Optional[bytes]) -> list[int]:
+        """
+        Track which locations the player has collected.
+        """
         new_locations: list[int] = []
         for loc, treasure in treasuretypes.get_base_treasure_dict().items():
             loc_id = self._loc_name_to_id[str(loc)]
@@ -268,6 +274,55 @@ class RDIClient(SNIClient):
                     if self._is_script_treasure_collected(event_data, loc):
                         new_locations.append(loc_id)
 
+        return new_locations
+
+    @classmethod
+    async def _deliver_next_item(cls, ctx: SNIContext):
+        """
+        Deliver the next available item to the player if there are
+        any items waiting to be delivered.
+        """
+        from SNIClient import snes_read, snes_buffered_write, snes_flush_writes
+
+        item_buf = await snes_read(
+            ctx, cls._convert_to_sni_addressing(RECEIVED_ITEM_ADDR), 1)
+
+        item_cnt = await snes_read(
+            ctx, cls._convert_to_sni_addressing(RECEIVED_ITEM_CNT), 1)
+
+        if item_cnt is None or \
+                item_buf is None or \
+                item_buf[0] != 0:
+            # Read failed or an item is already in the delivery buffer
+            return
+
+        if len(ctx.items_received) > item_cnt[0]:
+            item = ctx.items_received[item_cnt[0]]
+            in_game_id = item.item - ITEM_ID_BASE
+
+            if in_game_id <= MAX_IN_GAME_ITEM_ID:
+                snes_buffered_write(
+                    ctx,
+                    cls._convert_to_sni_addressing(RECEIVED_ITEM_ADDR),
+                    bytes[in_game_id])
+
+                await snes_flush_writes(ctx)
+
+    async def _handle_victory_condition(
+            self, ctx: SNIContext, event_data: bytes):
+        """
+        Check if the player has achieved the goal.
+        """
+        offset = VICTORY_ADDR - EVENT_BASE_ADDR
+        victory = (event_data[offset] & VICTORY_FLAG) > 0
+
+        if victory and not ctx.finished_game:
+            # Notify the server that the player beat the game
+            ctx.finished_game = True
+            await ctx.send_msg(
+                [{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
+
+    @override
     async def validate_rom(self, ctx: SNIContext) -> bool:
         from SNIClient import snes_read
 
@@ -278,9 +333,34 @@ class RDIClient(SNIClient):
         # TODO: Actual slot validation
         return True
 
+    @override
     async def game_watcher(self, ctx: SNIContext) -> None:
-        pass
+        from SNIClient import snes_read
 
+        if not ctx.allow_collect or ctx.server is None or ctx.slot is None:
+            # Client isn't fully connected yet
+            return False
+
+        # Read the map and event data needed for subsequent checks
+        map_data = await snes_read(ctx, LOCATION_ADDR, 2)
+        event_addr = self._convert_to_sni_addressing(
+            EVENT_BASE_ADDR), EVENT_BLOCK_SIZE
+        event_data = await snes_read(ctx, event_addr)
+
+        # Check if the game is in a valid state for tracking then
+        # handle new locations and item delivery.
+        if self._can_track(ctx, event_data, map_data):
+            new_locations = self._track_locations(ctx, event_data)
+            self._deliver_next_item(ctx)
+
+            if len(new_locations) > 0:
+                # Send newly checked locations to the server
+                await ctx.send_msgs(
+                    [{"cmd": "LocationChecks", "locations": new_locations}])
+
+            self._handle_victory_condition(ctx, event_data)
+
+    @override
     async def deathlink_kill_player(self, ctx: SNIContext) -> None:
         """
         Not implmented for RDI

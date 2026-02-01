@@ -10,25 +10,26 @@ import settings
 import worlds
 
 from BaseClasses import CollectionState, Entrance, EntranceType, Item, \
-    ItemClassification, Location, Multiworld, Region, Tutorial
+    ItemClassification, Location, MultiWorld, Region, Tutorial
 
 from Utils import read_snes_rom
 
 from worlds.AutoWorld import WebWorld, World
 
 # Local APWorld imports
-from .Options import CTRandoOptions
+from .Options import CTRDIOptions
 
 # RDI randomizer imports
 from ctrando import randomizer
 from ctrando.arguments import arguments
+from ctrando.bosses.bosstypes import BossSpotID
 from ctrando.common import ctenums, ctrom, memory, randostate
 from ctrando.common.ctenums import (
-    ItemID, BossSpotID, RecruitID,  TreasureID as TID)
+    ItemID, RecruitID,  TreasureID as TID)
 from ctrando.entranceshuffler import entrancefiller
-from ctrando.entranceshuffer.locregions import LocRegion
-from ctrando.entranceshuffer.owregions import OWRegion
-from ctrando.entranceshuffer.regionmap import ExitConnector, RegionConnector
+from ctrando.entranceshuffler.locregions import LocRegion
+from ctrando.entranceshuffler.owregions import OWRegion
+from ctrando.entranceshuffler.regionmap import ExitConnector, RegionConnector
 from ctrando.logic import logictypes
 from ctrando.objectives import objectivetypes as objty
 from ctrando.treasures.treasuretypes import Gold
@@ -36,7 +37,6 @@ from ctrando.treasures.treasuretypes import Gold
 
 # TODO task list:
 #  - Add Options handing
-#  - Create client
 #  - Create tutorial docs
 #  - General organization/cleanup pass, add helper classes, etc
 
@@ -47,28 +47,28 @@ ITEM_ID_BASE = 50_350_000
 CTUSA_MD5_HASH = "a2bc447961e52fd2227baed164f729dc"
 
 
-class RDIDeltaPatch(worlds.Files.APDeltaPatch):
+class CTRDIDeltaPatch(worlds.Files.APDeltaPatch):
     hash = CTUSA_MD5_HASH
     game = "Chrono Trigger"
     patch_file_ending = ".apctrdi"
 
     @classmethod
     def get_source_data(cls) -> bytes:
-        return CTRandoWorld.get_base_rom_bytes()
+        return CTRDIWorld.get_base_rom_bytes()
 
 
-class RDISettings(settings.Group):
+class CTRDISettings(settings.Group):
     class RomFile(settings.SNESRomPath):
         """File name of the CT ROM"""
         description = "Chrono Trigger (USA) ROM"
         copy_to = "Chrono Trigger (USA).sfc"
-        md5s = [RDIDeltaPatch.hash]
+        md5s = [CTRDIDeltaPatch.hash]
 
 
-class CTRandoWebWorld(WebWorld):
+class CTRDIWebWorld(WebWorld):
     tutorials = [Tutorial(
         "Multiworld Setup Guide",
-        "Setup guide for CTRando multiworld",
+        "Setup guide for CTRDI multiworld",
         "English",
         "multiworld_en.md",
         "multiworld/en",
@@ -83,17 +83,17 @@ class RegionData:
     ap_region: Region
 
 
-class CTRandoWorld(World):
+class CTRDIWorld(World):
     """
-    TODO: CTRando description here
+    TODO: CTRDI description here
     """
-    game: str = "Rando Dalton Imperial"
+    game: str = "Chrono Trigger: Rando Dalton Imperial"
     topology_present = True
     origin_region_name = "starting_rewards"
-    options_dataclass = CTRandoOptions
-    Options: CTRandoOptions
+    options_dataclass = CTRDIOptions
+    Options: CTRDIOptions
 
-    web = CTRandoWebWorld()
+    web = CTRDIWebWorld()
 
     rdi_settings: arguments.Settings = None
     config: randostate.ConfigState = None
@@ -346,8 +346,9 @@ class CTRandoWorld(World):
         with open(output_path, "wb") as file:
             file.write(out_rom.getbuffer())
 
-        patch = RDIDeltaPatch(
-            os.path.splittext(output_path)[0]+RDIDeltaPatch.patch_file_ending,
+        patch = CTRDIDeltaPatch(
+            os.path.splittext(output_path)[0] +
+            CTRDIDeltaPatch.patch_file_ending,
             player=self.player,
             player_name=self.multiworld.player_name[self.player],
             patched_path=output_path)
