@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from Options import Choice, PerGameCommonOptions, Range, Toggle
 
 # TODO: Autogenerate these from arg specs?
@@ -21,7 +23,7 @@ class TpScale(Range):
     """Factor by which to scale TP earned in battles"""
     # NOTE: It looks like Range only support integers
     #       But this field is a float in RDI
-    display_name = "XP Scale"
+    display_name = "TP Scale"
     range_start = 1
     range_end = 10
     default = 4
@@ -42,6 +44,7 @@ class ShowFullTechList(Toggle):
     display_name = "Show Full Tech List"
 
 
+@dataclass
 class CTRDIOptions(PerGameCommonOptions):
     xp_scale: XpScale
     tp_scale: TpScale

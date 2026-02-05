@@ -48,10 +48,18 @@ MAX_MAP_ID = 0x1FF
 
 @dataclass
 class CheckCounter:
+    """
+    Dataclass to handle checks that are implemented as
+    counters rather than standard memory flags
+    """
     address: int
     count: int
 
 
+"""
+Dictionary of script based treasure locations to their respective
+memory flag or counter data.
+"""
 _script_locations: dict[TID, Flags | CheckCounter] = {
     # Northern Ruins event chests
     TID.NORTHERN_RUINS_BASEMENT_600: Flags.NORTHERN_RUINS_BASEMENT_CHEST_600_OBTAINED,
@@ -171,15 +179,16 @@ _script_locations: dict[TID, Flags | CheckCounter] = {
     TID.DORINO_INN_POWERMEAL: Flags.OBTAINED_DORINO_INN_POWERMEAL,
     TID.YAKRA_KEY_CHEST: Flags.RESCUE_CHANCELLOR_1000,
     TID.COURTROOM_YAKRA_KEY: Flags.OBTAINED_YAKRA_KEY,
+    TID.JOHNNY_RACE_POWER_TAB: Flags.OBTAINED_JOHNNY_RACE_POWER_TAB
 }
 
 
 class CTRDIClient(SNIClient):
     """
-    Game client for Chrono Trigger Rando Dalton Imperial
+    Game client for Chrono Trigger Rando-Dalton Imperial
     """
 
-    game = "Chrono Trigger: Rando Dalton Imperial"
+    game = "Chrono Trigger: Rando-Dalton Imperial"
 
     _loc_name_to_id = {str(loc): ITEM_ID_BASE + loc for loc in TID}
 
@@ -258,7 +267,7 @@ class CTRDIClient(SNIClient):
     def _track_locations(
             self,
             ctx: SNIContext,
-            event_data: typing.Optional[bytes]) -> list[int]:
+            event_data: bytes) -> list[int]:
         """
         Track which locations the player has collected.
         """
@@ -287,17 +296,18 @@ class CTRDIClient(SNIClient):
         item_buf = await snes_read(
             ctx, cls._convert_to_sni_addressing(RECEIVED_ITEM_ADDR), 1)
 
-        item_cnt = await snes_read(
-            ctx, cls._convert_to_sni_addressing(RECEIVED_ITEM_CNT), 1)
+        item_cnt_buf = await snes_read(
+            ctx, cls._convert_to_sni_addressing(RECEIVED_ITEM_CNT), 2)
 
-        if item_cnt is None or \
+        if item_cnt_buf is None or \
                 item_buf is None or \
                 item_buf[0] != 0:
             # Read failed or an item is already in the delivery buffer
             return
 
-        if len(ctx.items_received) > item_cnt[0]:
-            item = ctx.items_received[item_cnt[0]]
+        item_cnt = int.from_bytes(item_cnt_buf, "little")
+        if len(ctx.items_received) > item_cnt:
+            item = ctx.items_received[item_cnt]
             in_game_id = item.item - ITEM_ID_BASE
 
             if in_game_id <= MAX_IN_GAME_ITEM_ID:
