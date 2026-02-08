@@ -10,7 +10,7 @@ from typing import Callable
 import settings
 import worlds
 
-from BaseClasses import CollectionState, Entrance, EntranceType, Item, \
+from BaseClasses import CollectionState, Item, \
     ItemClassification, Location, MultiWorld, Region, Tutorial
 
 from Utils import read_snes_rom
@@ -18,7 +18,7 @@ from Utils import read_snes_rom
 from worlds.AutoWorld import WebWorld, World
 
 # Local APWorld imports
-from .Options import CTRDIOptions
+from .Options import CTRDIOptions, option_groups
 
 # RDI randomizer imports
 from ctrando import randomizer
@@ -77,6 +77,7 @@ class CTRDIWebWorld(WebWorld):
         "multiworld/en",
         ["Pseudoarc", "Anguirel"]
     )]
+    option_groups = option_groups
 
 
 @dataclass
@@ -347,7 +348,6 @@ class CTRDIWorld(World):
                 access_rule = self._create_access_rule(connector)
                 exit_obj.access_rule = access_rule
                 exit_obj.connect(to_region.ap_region)
-                access_rule(CollectionState(self.multiworld))
 
         return region_dict
 
@@ -410,9 +410,7 @@ class CTRDIWorld(World):
         # Trivial case, always available
         # An list containint an empty list of single access rules
         if not connector.rule.get_access_rule()[0]:
-            def rule_fn(state: CollectionState) -> bool:
-                return True
-            # return lambda state: True
+            return lambda state: True
 
         # Convert the RDI rule to an AP rule
         def can_access(state: CollectionState) -> bool:
