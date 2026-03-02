@@ -13,6 +13,8 @@ import worlds
 from BaseClasses import CollectionState, Item, \
     ItemClassification, Location, MultiWorld, Region, Tutorial
 
+from Options import Choice, Range, Toggle
+
 from Utils import read_snes_rom
 
 from worlds.AutoWorld import WebWorld, World
@@ -22,7 +24,7 @@ from .Options import CTRDIOptions, option_groups
 
 # RDI randomizer imports
 from ctrando import randomizer
-from ctrando.arguments import arguments, tomloptions
+from ctrando.arguments import arguments, argumenttypes, tomloptions
 from ctrando.bosses.bosstypes import BossSpotID
 from ctrando.common import ctenums, ctrom, memory, randostate
 from ctrando.common.ctenums import (
@@ -144,8 +146,6 @@ class CTRDIWorld(World):
         Set up the RDI settings/config objects that will be used
         in subsequent stages to create items/regions/etc for the multiworld.
         """
-        # TODO: Maybe convert yaml options so we can use the built-in
-        #       extract_settings function in the randomizer?
         self._translate_settings()
         base_rom = ctrom.CTRom.from_file(self.get_rom_path())
         self.ct_rom = randomizer.ctrom.CTRom(base_rom.getvalue())
@@ -449,14 +449,32 @@ class CTRDIWorld(World):
         """
         Set up a randomizer Settings object with the user's chosen AP options
         """
-        # TODO: For now just use the FF1R preset for testing
-        preset_data = arguments.get_preset(arguments.Presets.FF1R)
-        parser = arguments.get_parser()
-        args = parser.parse_args(tomloptions.toml_data_to_args(preset_data))
-        self.rdi_settings = arguments.Settings.extract_from_namespace(args)
-        # self.rdi_settings = arguments.Settings()
-        # TODO: Convert AP yaml options to equivalent settings here
-        # TODO: Add rom location to settings
+        data_dict = {}
+        group_specs = arguments.Settings.get_argument_spec()
+        for group_spec in group_specs.values():
+            for flag_name, spec in group_spec.items():
+                if hasattr(self.options, flag_name):
+                    value = getattr(self.options, flag_name)
+                    if isinstance(value, Choice):
+                        value = value.name_lookup[value]
+
+                    if isinstance(value, Toggle):
+                        value = value.value == 1
+
+                    if isinstance(value, Range):
+                        value = value.value
+
+                    # Skip string fields with no data
+                    if isinstance(spec, argumenttypes.StringArgument):
+                        if value != "":
+                            data_dict[flag_name] = value
+                    else:
+                        data_dict[flag_name] = value
+
+        # print(data_dict)
+        # args = tomloptions.toml_data_to_args(data_dict)
+        args = tomloptions.toml_data_to_args({})
+        self.rdi_settings = randomizer.extract_settings(*args)
 
     @staticmethod
     def get_rom_path() -> str:

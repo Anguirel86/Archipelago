@@ -13,6 +13,10 @@ option_groups_buf = io.StringIO()
 
 group_name_list: list[str] = []
 
+args_to_omit = [
+    "ending"
+]
+
 
 def get_class_name(val: str) -> str:
     return ''.join(x.capitalize() for x in val.split('_'))
@@ -106,6 +110,9 @@ def parse_option_group(group_name: str, arg_spec: dict):
         group_name_list.append(group_name)
 
     for flag, spec in arg_spec.items():
+        if flag in args_to_omit:
+            continue
+
         if isinstance(spec, dict):
             # Recursive arg specs
             parse_option_group(group_name, spec)

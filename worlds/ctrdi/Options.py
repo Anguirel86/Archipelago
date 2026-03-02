@@ -9,7 +9,7 @@ class XpScale(Range):
     """Factor by which to scale XP earned in battle"""
     display_name = "Xp Scale"
     range_start = 1
-    rage_end = 10
+    range_end = 10
     default = 4
 
 
@@ -17,7 +17,7 @@ class TpScale(Range):
     """Factor by which to scale TP earned in battle"""
     display_name = "Tp Scale"
     range_start = 1
-    rage_end = 10
+    range_end = 10
     default = 4
 
 
@@ -35,7 +35,7 @@ class XpPenaltyLevel(Range):
     """Levels past this level become more difficult to obtain"""
     display_name = "Xp Penalty Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 40
 
 
@@ -43,7 +43,7 @@ class XpPenaltyPercent(Range):
     """For each level beyond the penalty, the requirement grows by this percent"""
     display_name = "Xp Penalty Percent"
     range_start = 0
-    rage_end = 100
+    range_end = 100
     default = 15
 
 
@@ -51,7 +51,7 @@ class LevelCap(Range):
     """Levels beyond the level cap will have prohibitively large requirements."""
     display_name = "Level Cap"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 50
 
 
@@ -59,7 +59,7 @@ class BossXpFactor(Range):
     """Boss xp is additionally multiplied by this factor"""
     display_name = "Boss Xp Factor"
     range_start = 0
-    rage_end = 5
+    range_end = 5
     default = 2
 
 
@@ -67,7 +67,7 @@ class MidbossRewardFactor(Range):
     """Midboss xp/tp is additionally multiplied by this factor"""
     display_name = "Midboss Reward Factor"
     range_start = 0
-    rage_end = 5
+    range_end = 5
     default = 2
 
 
@@ -99,7 +99,7 @@ class DropRate(Range):
     """Percentage (decimal) of enemies in the drop pool which have a dropped item"""
     display_name = "Drop Rate"
     range_start = 0
-    rage_end = 1
+    range_end = 1
     default = 1
 
 
@@ -131,7 +131,7 @@ class CharmRate(Range):
     """Percentage (decimal) of enemies in the charm pool which have a charmable item"""
     display_name = "Charm Rate"
     range_start = 0
-    rage_end = 1
+    range_end = 1
     default = 1
 
 
@@ -165,7 +165,7 @@ class TechDamageRandomFactorMin(Range):
     """Minimum percent (as decimal, default 1.0) which MP costs may shift (ignored if vanilla damage)"""
     display_name = "Tech Damage Random Factor Min"
     range_start = 1
-    rage_end = 2
+    range_end = 2
     default = 1
 
 
@@ -173,7 +173,7 @@ class TechDamageRandomFactorMax(Range):
     """Maximum percent (as decimal, default 1.0) which MP costs may shift (ignored if vanilla damage)"""
     display_name = "Tech Damage Random Factor Max"
     range_start = 1
-    rage_end = 2
+    range_end = 2
     default = 1
 
 
@@ -186,7 +186,7 @@ class BlackHoleFactor(Range):
     """Percent kill chance per MP in black hole's cost"""
     display_name = "Black Hole Factor"
     range_start = 0
-    rage_end = 10
+    range_end = 10
     default = 2
 
 
@@ -194,7 +194,7 @@ class BlackHoleMin(Range):
     """Base percent kill chance for black hole, total is base + mp*factor"""
     display_name = "Black Hole Min"
     range_start = 0
-    rage_end = 100
+    range_end = 100
     default = 10
 
 
@@ -222,7 +222,7 @@ class LevelsPerBoss(Range):
     """Scaling levels gained per boss defeated"""
     display_name = "Levels Per Boss"
     range_start = 0
-    rage_end = 10
+    range_end = 10
     default = 2
 
 
@@ -230,7 +230,7 @@ class LevelsPerQuest(Range):
     """Scaling levels gained per quest completed"""
     display_name = "Levels Per Quest"
     range_start = 0
-    rage_end = 10
+    range_end = 10
     default = 2
 
 
@@ -238,7 +238,7 @@ class LevelsPerKeyItem(Range):
     """Scaling levels gained per key item obtained"""
     display_name = "Levels Per Key Item"
     range_start = 0
-    rage_end = 10
+    range_end = 10
     default = 0
 
 
@@ -246,7 +246,7 @@ class LevelsPerObjective(Range):
     """Scaling levels gained per objective completed"""
     display_name = "Levels Per Objective"
     range_start = 0
-    rage_end = 10
+    range_end = 10
     default = 2
 
 
@@ -254,7 +254,7 @@ class LevelsPerCharacter(Range):
     """Scaling levels gained per character recruited"""
     display_name = "Levels Per Character"
     range_start = 0
-    rage_end = 10
+    range_end = 10
     default = 2
 
 
@@ -262,7 +262,7 @@ class MaxScalingLevel(Range):
     """Maximum level to scale to (if not none)"""
     display_name = "Max Scaling Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 50
 
 
@@ -280,7 +280,7 @@ class DefenseSafetyMinLevel(Range):
     """Level before which enemies have standard phys defense"""
     display_name = "Defense Safety Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 10
 
 
@@ -288,7 +288,7 @@ class DefenseSafetyMaxLevel(Range):
     """Level after which enemies have their normal phys defense"""
     display_name = "Defense Safety Max Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 30
 
 
@@ -296,7 +296,7 @@ class ObstacleSafetyLevel(Range):
     """Level before which Obstacle is single target"""
     display_name = "Obstacle Safety Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 30
 
 
@@ -304,7 +304,7 @@ class NormalEnemyHpScale(Range):
     """Multiply non-boss enemy hp by this factor"""
     display_name = "Normal Enemy Hp Scale"
     range_start = 1
-    rage_end = 2
+    range_end = 2
     default = 1
 
 
@@ -312,8 +312,8 @@ class StaticBossHpScale(Range):
     """Multiply boss hp by this factor"""
     display_name = "Static Boss Hp Scale"
     range_start = 1
-    rage_end = 2
-    default = 0
+    range_end = 2
+    default = 1
 
 
 class StaticHpScaleLavos(Toggle):
@@ -325,7 +325,7 @@ class ElementSafetyLevel(Range):
     """Before this level any magic hits Nizbel/Retinite weakness"""
     display_name = "Element Safety Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 30
 
 
@@ -333,7 +333,7 @@ class MillennialFairMod(Range):
     """Additional scaling levels for millennial_fair"""
     display_name = "Millennial Fair Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -341,7 +341,7 @@ class GuardiaForest1000Mod(Range):
     """Additional scaling levels for guardia_forest_1000"""
     display_name = "Guardia Forest 1000 Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -349,7 +349,7 @@ class GuardiaForest600Mod(Range):
     """Additional scaling levels for guardia_forest_600"""
     display_name = "Guardia Forest 600 Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -357,7 +357,7 @@ class CronoTrialMod(Range):
     """Additional scaling levels for crono_trial"""
     display_name = "Crono Trial Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -365,7 +365,7 @@ class HeckranCaveMod(Range):
     """Additional scaling levels for heckran_cave"""
     display_name = "Heckran Cave Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -373,7 +373,7 @@ class TruceCanyonMod(Range):
     """Additional scaling levels for truce_canyon"""
     display_name = "Truce Canyon Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -381,7 +381,7 @@ class ManoriaCathedralMod(Range):
     """Additional scaling levels for manoria_cathedral"""
     display_name = "Manoria Cathedral Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -389,7 +389,7 @@ class DenadoroMountainsMod(Range):
     """Additional scaling levels for denadoro_mountains"""
     display_name = "Denadoro Mountains Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -397,7 +397,7 @@ class CursedWoodsMod(Range):
     """Additional scaling levels for cursed_woods"""
     display_name = "Cursed Woods Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -405,7 +405,7 @@ class Lab16Mod(Range):
     """Additional scaling levels for lab_16"""
     display_name = "Lab 16 Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -413,7 +413,7 @@ class Lab32Mod(Range):
     """Additional scaling levels for lab_32"""
     display_name = "Lab 32 Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -421,7 +421,7 @@ class SewersMod(Range):
     """Additional scaling levels for sewers"""
     display_name = "Sewers Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -429,7 +429,7 @@ class DeathPeakMod(Range):
     """Additional scaling levels for death_peak"""
     display_name = "Death Peak Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -437,7 +437,7 @@ class ArrisDomeMod(Range):
     """Additional scaling levels for arris_dome"""
     display_name = "Arris Dome Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -445,7 +445,7 @@ class ProtoDomeMod(Range):
     """Additional scaling levels for proto_dome"""
     display_name = "Proto Dome Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -453,7 +453,7 @@ class FactoryRuinsMod(Range):
     """Additional scaling levels for factory_ruins"""
     display_name = "Factory Ruins Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -461,7 +461,7 @@ class MysticMountainsMod(Range):
     """Additional scaling levels for mystic_mountains"""
     display_name = "Mystic Mountains Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -469,7 +469,7 @@ class HuntingRangeMod(Range):
     """Additional scaling levels for hunting_range"""
     display_name = "Hunting Range Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -477,7 +477,7 @@ class DactylNestMod(Range):
     """Additional scaling levels for dactyl_nest"""
     display_name = "Dactyl Nest Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -485,7 +485,7 @@ class ShellTrialMod(Range):
     """Additional scaling levels for shell_trial"""
     display_name = "Shell Trial Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -493,7 +493,7 @@ class ZenanBridgeMod(Range):
     """Additional scaling levels for zenan_bridge"""
     display_name = "Zenan Bridge Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -501,7 +501,7 @@ class NorthernRuinsMod(Range):
     """Additional scaling levels for northern_ruins"""
     display_name = "Northern Ruins Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -509,7 +509,7 @@ class GiantsClawMod(Range):
     """Additional scaling levels for giants_claw"""
     display_name = "Giants Claw Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -517,7 +517,7 @@ class OzziesFortMod(Range):
     """Additional scaling levels for ozzies_fort"""
     display_name = "Ozzies Fort Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -525,7 +525,7 @@ class MagusCastleMod(Range):
     """Additional scaling levels for magus_castle"""
     display_name = "Magus Castle Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -533,7 +533,7 @@ class MagicCaveMod(Range):
     """Additional scaling levels for magic_cave"""
     display_name = "Magic Cave Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -541,7 +541,7 @@ class SunkenDesertMod(Range):
     """Additional scaling levels for sunken_desert"""
     display_name = "Sunken Desert Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -549,7 +549,7 @@ class SunPalaceMod(Range):
     """Additional scaling levels for sun_palace"""
     display_name = "Sun Palace Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -557,7 +557,7 @@ class GenoDomeMod(Range):
     """Additional scaling levels for geno_dome"""
     display_name = "Geno Dome Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -565,7 +565,7 @@ class ForestMazeMod(Range):
     """Additional scaling levels for forest_maze"""
     display_name = "Forest Maze Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -573,7 +573,7 @@ class ReptiteLairMod(Range):
     """Additional scaling levels for reptite_lair"""
     display_name = "Reptite Lair Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -581,7 +581,7 @@ class TyranoLairMod(Range):
     """Additional scaling levels for tyrano_lair"""
     display_name = "Tyrano Lair Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -589,7 +589,7 @@ class BlackOmenMod(Range):
     """Additional scaling levels for black_omen"""
     display_name = "Black Omen Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -597,7 +597,7 @@ class NorthCapeMod(Range):
     """Additional scaling levels for north_cape"""
     display_name = "North Cape Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -605,7 +605,7 @@ class EpochBattleMod(Range):
     """Additional scaling levels for epoch_battle"""
     display_name = "Epoch Battle Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -613,7 +613,7 @@ class BlackbirdMod(Range):
     """Additional scaling levels for blackbird"""
     display_name = "Blackbird Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -621,7 +621,7 @@ class EnhasaMod(Range):
     """Additional scaling levels for enhasa"""
     display_name = "Enhasa Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -629,7 +629,7 @@ class OceanPalaceMod(Range):
     """Additional scaling levels for ocean_palace"""
     display_name = "Ocean Palace Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -637,7 +637,7 @@ class MtWoeMod(Range):
     """Additional scaling levels for mt_woe"""
     display_name = "Mt Woe Mod"
     range_start = -50
-    rage_end = 50
+    range_end = 50
     default = 0
 
 
@@ -645,16 +645,8 @@ class IncentiveFactor(Range):
     """Factor by which to increase the weight of incentive spots"""
     display_name = "Incentive Factor"
     range_start = 1
-    rage_end = 10
+    range_end = 10
     default = 5
-
-
-class DecayFactor(Range):
-    """Factor by which to decrease the weight of regions which have already received items (1.0 = no change)"""
-    display_name = "Decay Factor"
-    range_start = 0
-    rage_end = 1
-    default = 0
 
 
 class HardLavosEndBoss(Toggle):
@@ -670,14 +662,6 @@ class BoatsOfTime(Toggle):
 class JetsOfTime(Toggle):
     """Add JetsOfTime item and turn-in on Blackbird scaffolding"""
     display_name = "Jets Of Time"
-
-
-class MinFlightDepth(Range):
-    """Minimum logical depth at which flight can be obtained"""
-    display_name = "Min Flight Depth"
-    range_start = 0
-    rage_end = 6
-    default = 0
 
 
 class BossRandomizationType(Choice):
@@ -745,15 +729,15 @@ class ItemPriceMinMultiplier(Range):
     """minimum price multiplier that an item's price can roll"""
     display_name = "Item Price Min Multiplier"
     range_start = 1
-    rage_end = 10
-    default = 0
+    range_end = 10
+    default = 1
 
 
 class ItemPriceMaxMultiplier(Range):
     """maximum price multiplier that an item's price can roll"""
     display_name = "Item Price Max Multiplier"
     range_start = 1
-    rage_end = 10
+    range_end = 10
     default = 2
 
 
@@ -761,7 +745,7 @@ class NumAlgettyPortalObjectives(Range):
     """Number of objectives needed to unlock the portal in Algetty's entrance"""
     display_name = "Num Algetty Portal Objectives"
     range_start = 0
-    rage_end = 8
+    range_end = 8
     default = 3
 
 
@@ -769,7 +753,7 @@ class NumOmenObjectives(Range):
     """Number of objectives needed to unlock the final door in the Black Omen"""
     display_name = "Num Omen Objectives"
     range_start = 0
-    rage_end = 8
+    range_end = 8
     default = 4
 
 
@@ -777,7 +761,7 @@ class NumBucketObjectives(Range):
     """Number of objectives needed to unlock the bucket in the End of Time"""
     display_name = "Num Bucket Objectives"
     range_start = 0
-    rage_end = 8
+    range_end = 8
     default = 5
 
 
@@ -785,7 +769,7 @@ class NumGauntletObjectives(Range):
     """Number of objectives needed to remove the lavos boss gauntlet"""
     display_name = "Num Gauntlet Objectives"
     range_start = 0
-    rage_end = 8
+    range_end = 8
     default = 5
 
 
@@ -793,7 +777,7 @@ class NumTimegaugeObjectives(Range):
     """Number of objectives needed to unlock the bucket in the End of Time"""
     display_name = "Num Timegauge Objectives"
     range_start = 0
-    rage_end = 8
+    range_end = 8
     default = 6
 
 
@@ -859,15 +843,15 @@ class StarterMinLevel(Range):
     """Minimum level at which the starter recruit can join (default: 1)"""
     display_name = "Starter Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 1
 
 
 class StarterMinTechlevel(Range):
     """Minimum techlevel at which the starter recruit can join (default: 0)"""
     display_name = "Starter Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 0
 
 
@@ -875,15 +859,15 @@ class FairMinLevel(Range):
     """Minimum level at which the fair recruit can join (default: 1)"""
     display_name = "Fair Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 1
 
 
 class FairMinTechlevel(Range):
     """Minimum techlevel at which the fair recruit can join (default: 0)"""
     display_name = "Fair Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 0
 
 
@@ -891,15 +875,15 @@ class CathedralMinLevel(Range):
     """Minimum level at which the cathedral recruit can join (default: 5)"""
     display_name = "Cathedral Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 5
 
 
 class CathedralMinTechlevel(Range):
     """Minimum techlevel at which the cathedral recruit can join (default: 0)"""
     display_name = "Cathedral Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 0
 
 
@@ -907,15 +891,15 @@ class CastleMinLevel(Range):
     """Minimum level at which the castle recruit can join (default: 5)"""
     display_name = "Castle Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 5
 
 
 class CastleMinTechlevel(Range):
     """Minimum techlevel at which the castle recruit can join (default: 1)"""
     display_name = "Castle Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 1
 
 
@@ -923,15 +907,15 @@ class TrialMinLevel(Range):
     """Minimum level at which the trial recruit can join (default: 7)"""
     display_name = "Trial Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 7
 
 
 class TrialMinTechlevel(Range):
     """Minimum techlevel at which the trial recruit can join (default: 1)"""
     display_name = "Trial Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 1
 
 
@@ -939,15 +923,15 @@ class ProtoMinLevel(Range):
     """Minimum level at which the proto recruit can join (default: 10)"""
     display_name = "Proto Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 10
 
 
 class ProtoMinTechlevel(Range):
     """Minimum techlevel at which the proto recruit can join (default: 2)"""
     display_name = "Proto Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 2
 
 
@@ -955,15 +939,15 @@ class NorthCapeMinLevel(Range):
     """Minimum level at which the north_cape recruit can join (default: 37)"""
     display_name = "North Cape Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 37
 
 
 class NorthCapeMinTechlevel(Range):
     """Minimum techlevel at which the north_cape recruit can join (default: 3)"""
     display_name = "North Cape Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 3
 
 
@@ -971,15 +955,15 @@ class BurrowMinLevel(Range):
     """Minimum level at which the burrow recruit can join (default: 18)"""
     display_name = "Burrow Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 18
 
 
 class BurrowMinTechlevel(Range):
     """Minimum techlevel at which the burrow recruit can join (default: 2)"""
     display_name = "Burrow Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 2
 
 
@@ -987,15 +971,15 @@ class DactylMinLevel(Range):
     """Minimum level at which the dactyl recruit can join (default: 20)"""
     display_name = "Dactyl Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 20
 
 
 class DactylMinTechlevel(Range):
     """Minimum techlevel at which the dactyl recruit can join (default: 2)"""
     display_name = "Dactyl Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 2
 
 
@@ -1003,15 +987,15 @@ class DeathPeakMinLevel(Range):
     """Minimum level at which the death_peak recruit can join (default: 37)"""
     display_name = "Death Peak Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 37
 
 
 class DeathPeakMinTechlevel(Range):
     """Minimum techlevel at which the death_peak recruit can join (default: 8)"""
     display_name = "Death Peak Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 8
 
 
@@ -1019,15 +1003,15 @@ class YakraBoxMinLevel(Range):
     """Minimum level at which the yakra_box recruit can join (default: 25)"""
     display_name = "Yakra Box Min Level"
     range_start = 1
-    rage_end = 99
+    range_end = 99
     default = 25
 
 
 class YakraBoxMinTechlevel(Range):
     """Minimum techlevel at which the yakra_box recruit can join (default: 3)"""
     display_name = "Yakra Box Min Techlevel"
-    range_start = 1
-    rage_end = 8
+    range_start = 0
+    range_end = 8
     default = 3
 
 
@@ -1080,23 +1064,23 @@ class GoodLootRate(Range):
     """Percent chance to fill a good loot spot with good loot"""
     display_name = "Good Loot Rate"
     range_start = 0
-    rage_end = 1
-    default = 0
+    range_end = 1
+    default = 1
 
 
 class PostAssignShuffleRate(Range):
     """Percent chance to shuffle after basic assignment"""
     display_name = "Post Assign Shuffle Rate"
     range_start = 0
-    rage_end = 1
-    default = 0
+    range_end = 1
+    default = 1
 
 
 class TradingPostBaseCost(Range):
     """Number of materials of each type required for base trade"""
     display_name = "Trading Post Base Cost"
     range_start = 1
-    rage_end = 10
+    range_end = 10
     default = 3
 
 
@@ -1104,7 +1088,7 @@ class TradingPostUpgradeCost(Range):
     """Number of materials of each type required for upgraded trade"""
     display_name = "Trading Post Upgrade Cost"
     range_start = 1
-    rage_end = 10
+    range_end = 10
     default = 3
 
 
@@ -1112,7 +1096,7 @@ class TradingPostSpecialCost(Range):
     """Number of materials of each type required for special trade"""
     display_name = "Trading Post Special Cost"
     range_start = 1
-    rage_end = 15
+    range_end = 15
     default = 10
 
 
@@ -1120,7 +1104,7 @@ class JohnnyKeyThreshold(Range):
     """Points needed for the Johnny key item"""
     display_name = "Johnny Key Threshold"
     range_start = 0
-    rage_end = 2500
+    range_end = 2500
     default = 1500
 
 
@@ -1128,7 +1112,7 @@ class JohnnyLowThreshold(Range):
     """Points needed for the low tier Johnny rewards"""
     display_name = "Johnny Low Threshold"
     range_start = 0
-    rage_end = 2500
+    range_end = 2500
     default = 1200
 
 
@@ -1357,7 +1341,7 @@ class JohnnyLowQuantity(Range):
     """Number of items for the low tier Johnny reward"""
     display_name = "Johnny Low Quantity"
     range_start = 1
-    rage_end = 10
+    range_end = 10
     default = 5
 
 
@@ -1365,7 +1349,7 @@ class JohnnyMidThreshold(Range):
     """Points needed for the mid tier Johnny rewards"""
     display_name = "Johnny Mid Threshold"
     range_start = 0
-    rage_end = 2500
+    range_end = 2500
     default = 2000
 
 
@@ -1594,7 +1578,7 @@ class JohnnyMidQuantity(Range):
     """Number of items for the mid tier Johnny reward"""
     display_name = "Johnny Mid Quantity"
     range_start = 1
-    rage_end = 10
+    range_end = 10
     default = 5
 
 
@@ -1602,7 +1586,7 @@ class JohnnyHighThreshold(Range):
     """Points needed for the high tier Johnny rewards"""
     display_name = "Johnny High Threshold"
     range_start = 0
-    rage_end = 2500
+    range_end = 2500
     default = 2300
 
 
@@ -1831,7 +1815,7 @@ class JohnnyHighQuantity(Range):
     """Number of items for the high tier Johnny reward"""
     display_name = "Johnny High Quantity"
     range_start = 1
-    rage_end = 10
+    range_end = 10
     default = 5
 
 
@@ -1869,7 +1853,7 @@ class BattleSpeed(Range):
     """Default battle speed"""
     display_name = "Battle Speed"
     range_start = 1
-    rage_end = 8
+    range_end = 8
     default = 5
 
 
@@ -1877,7 +1861,7 @@ class MessageSpeed(Range):
     """Default message speed"""
     display_name = "Message Speed"
     range_start = 1
-    rage_end = 8
+    range_end = 8
     default = 5
 
 
@@ -1895,7 +1879,7 @@ class WindowBackground(Range):
     """Default window background"""
     display_name = "Window Background"
     range_start = 1
-    rage_end = 8
+    range_end = 8
     default = 1
 
 
@@ -1951,25 +1935,6 @@ class MagusPalette(FreeText):
     default = ""
 
 
-class Ending(Choice):
-    """name of ending (or "random")"""
-    display_name = "Ending"
-
-    option_beyond_time = 0
-    option_the_dream_project = 1
-    option_the_successor_of_guardia = 2
-    option_goodnight = 3
-    option_the_legendary_hero = 4
-    option_the_unknown_past = 5
-    option_people_of_the_times = 6
-    option_the_oath = 7
-    option_dino_age = 8
-    option_what_the_prophet_seeks = 9
-    option_a_slide_show = 10
-    option_rdi_random = 11
-    default = 1
-
-
 class RemoveFlashes(Toggle):
     """Remove flashes from many animations"""
     display_name = "Remove Flashes"
@@ -1979,7 +1944,7 @@ class DsReplacementChance(Range):
     """Percent chance (e.g. 10 for 10 percent) to replace an item with a ds counterpart"""
     display_name = "Ds Replacement Chance"
     range_start = 0
-    rage_end = 100
+    range_end = 100
     default = 50
 
 
@@ -2135,7 +2100,7 @@ class DaltonLevel(Range):
     """The internal level of Dalton [Experimental]"""
     display_name = "Dalton Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 26
 
 
@@ -2143,7 +2108,7 @@ class DaltonPlusLevel(Range):
     """The internal level of Dalton Plus [Experimental]"""
     display_name = "Dalton Plus Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 20
 
 
@@ -2151,7 +2116,7 @@ class ElderSpawnLevel(Range):
     """The internal level of Elder Spawn [Experimental]"""
     display_name = "Elder Spawn Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 46
 
 
@@ -2159,7 +2124,7 @@ class FleaLevel(Range):
     """The internal level of Flea [Experimental]"""
     display_name = "Flea Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 19
 
 
@@ -2167,7 +2132,7 @@ class GigaMutantLevel(Range):
     """The internal level of Giga Mutant [Experimental]"""
     display_name = "Giga Mutant Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 47
 
 
@@ -2175,7 +2140,7 @@ class GolemLevel(Range):
     """The internal level of Golem [Experimental]"""
     display_name = "Golem Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 27
 
 
@@ -2183,7 +2148,7 @@ class GolemBossLevel(Range):
     """The internal level of Golem Boss [Experimental]"""
     display_name = "Golem Boss Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 34
 
 
@@ -2191,7 +2156,7 @@ class HeckranLevel(Range):
     """The internal level of Heckran [Experimental]"""
     display_name = "Heckran Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 12
 
 
@@ -2199,7 +2164,7 @@ class LavosSpawnLevel(Range):
     """The internal level of Lavos Spawn [Experimental]"""
     display_name = "Lavos Spawn Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 32
 
 
@@ -2207,7 +2172,7 @@ class MammonMachineLevel(Range):
     """The internal level of Mammon M [Experimental]"""
     display_name = "Mammon Machine Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 44
 
 
@@ -2215,7 +2180,7 @@ class MagusNcLevel(Range):
     """The internal level of Magus (North Cape) [Experimental]"""
     display_name = "Magus Nc Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 30
 
 
@@ -2223,7 +2188,7 @@ class MasaMuneLevel(Range):
     """The internal level of Masa Mune [Experimental]"""
     display_name = "Masa Mune Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 15
 
 
@@ -2231,7 +2196,7 @@ class MegaMutantLevel(Range):
     """The internal level of Mega Mutant [Experimental]"""
     display_name = "Mega Mutant Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 46
 
 
@@ -2239,7 +2204,7 @@ class MudImpLevel(Range):
     """The internal level of Mud Imp [Experimental]"""
     display_name = "Mud Imp Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 29
 
 
@@ -2247,7 +2212,7 @@ class NizbelLevel(Range):
     """The internal level of Nizbel [Experimental]"""
     display_name = "Nizbel Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 17
 
 
@@ -2255,7 +2220,7 @@ class Nizbel2Level(Range):
     """The internal level of Nizbel II [Experimental]"""
     display_name = "Nizbel 2 Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 23
 
 
@@ -2263,7 +2228,7 @@ class RetiniteLevel(Range):
     """The internal level of Retinite [Experimental]"""
     display_name = "Retinite Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 28
 
 
@@ -2271,7 +2236,7 @@ class RSeriesLevel(Range):
     """The internal level of R Series [Experimental]"""
     display_name = "R Series Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 5
 
 
@@ -2279,7 +2244,7 @@ class RustTyranoLevel(Range):
     """The internal level of Rust Tyrano [Experimental]"""
     display_name = "Rust Tyrano Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 35
 
 
@@ -2287,7 +2252,7 @@ class SlashLevel(Range):
     """The internal level of Slash Sword [Experimental]"""
     display_name = "Slash Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 20
 
 
@@ -2295,7 +2260,7 @@ class SonOfSunLevel(Range):
     """The internal level of Son Of Sun [Experimental]"""
     display_name = "Son Of Sun Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 43
 
 
@@ -2303,7 +2268,7 @@ class TerraMutantLevel(Range):
     """The internal level of Terra Mutant [Experimental]"""
     display_name = "Terra Mutant Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 48
 
 
@@ -2311,7 +2276,7 @@ class YakraLevel(Range):
     """The internal level of Yakra [Experimental]"""
     display_name = "Yakra Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 4
 
 
@@ -2319,7 +2284,7 @@ class YakraXiiiLevel(Range):
     """The internal level of Yakra XIII [Experimental]"""
     display_name = "Yakra Xiii Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 39
 
 
@@ -2327,7 +2292,7 @@ class ZomborLevel(Range):
     """The internal level of Zombor [Experimental]"""
     display_name = "Zombor Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 9
 
 
@@ -2335,7 +2300,7 @@ class DragonTankLevel(Range):
     """The internal level of Dragon Tank [Experimental]"""
     display_name = "Dragon Tank Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 5
 
 
@@ -2343,7 +2308,7 @@ class GigaGaiaLevel(Range):
     """The internal level of Giga Gaia [Experimental]"""
     display_name = "Giga Gaia Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 30
 
 
@@ -2351,7 +2316,7 @@ class GuardianLevel(Range):
     """The internal level of Guardian [Experimental]"""
     display_name = "Guardian Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 6
 
 
@@ -2359,7 +2324,7 @@ class MagusLevel(Range):
     """The internal level of Magus [Experimental]"""
     display_name = "Magus Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 20
 
 
@@ -2367,7 +2332,7 @@ class BlackTyranoLevel(Range):
     """The internal level of Black Tyrano [Experimental]"""
     display_name = "Black Tyrano Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 20
 
 
@@ -2375,7 +2340,7 @@ class OzzieTrioLevel(Range):
     """The internal level of Ozzie Trio [Experimental]"""
     display_name = "Ozzie Trio Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 33
 
 
@@ -2383,7 +2348,7 @@ class AtroposLevel(Range):
     """The internal level of Atropos Xr [Experimental]"""
     display_name = "Atropos Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 33
 
 
@@ -2391,7 +2356,7 @@ class FleaPlusLevel(Range):
     """The internal level of Flea Plus [Experimental]"""
     display_name = "Flea Plus Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 27
 
 
@@ -2399,7 +2364,7 @@ class SuperSlashLevel(Range):
     """The internal level of Super Slash [Experimental]"""
     display_name = "Super Slash Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 27
 
 
@@ -2407,7 +2372,7 @@ class KrawlieLevel(Range):
     """The internal level of Krawlie [Experimental]"""
     display_name = "Krawlie Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 6
 
 
@@ -2415,7 +2380,7 @@ class GatoLevel(Range):
     """The internal level of Gato [Experimental]"""
     display_name = "Gato Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 1
 
 
@@ -2423,7 +2388,7 @@ class Zeal2Level(Range):
     """The internal level of Zeal 2 [Experimental]"""
     display_name = "Zeal2 Level"
     range_start = 0
-    rage_end = 99
+    range_end = 99
     default = 50
 
 
@@ -2512,11 +2477,9 @@ class CTRDIOptions(PerGameCommonOptions):
     ocean_palace_mod: OceanPalaceMod
     mt_woe_mod: MtWoeMod
     incentive_factor: IncentiveFactor
-    decay_factor: DecayFactor
     hard_lavos_end_boss: HardLavosEndBoss
     boats_of_time: BoatsOfTime
     jets_of_time: JetsOfTime
-    min_flight_depth: MinFlightDepth
     boss_randomization_type: BossRandomizationType
     midboss_randomization_type: MidbossRandomizationType
     shop_inventory_randomization: ShopInventoryRandomization
@@ -2604,7 +2567,6 @@ class CTRDIOptions(PerGameCommonOptions):
     frog_palette: FrogPalette
     ayla_palette: AylaPalette
     magus_palette: MagusPalette
-    ending: Ending
     remove_flashes: RemoveFlashes
     ds_replacement_chance: DsReplacementChance
     bronze_fist_policy: BronzeFistPolicy
@@ -2775,11 +2737,9 @@ option_groups: list[OptionGroup] = [
         "Logic Options",
         [
             IncentiveFactor,
-            DecayFactor,
             HardLavosEndBoss,
             BoatsOfTime,
             JetsOfTime,
-            MinFlightDepth,
 
         ]
     ),
@@ -2923,7 +2883,6 @@ option_groups: list[OptionGroup] = [
             FrogPalette,
             AylaPalette,
             MagusPalette,
-            Ending,
             RemoveFlashes,
 
         ]
