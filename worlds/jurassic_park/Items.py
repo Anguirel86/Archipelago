@@ -101,30 +101,23 @@ def create_filler_items(player: int, include_traps: bool) -> list[JPItem]:
     # Naive implementation, just hardcode filler/trap lists.
     # For now we have 11 spots (event locations) that will need filler.
     items: list[JPItem] = []
+    items.append(create_item("First Aid Kit", player))
+    items.append(create_item("First Aid Kit", player))
+    items.append(create_item("First Aid Kit", player))
+    items.append(create_item("Primary Ammo", player))
+    items.append(create_item("Primary Ammo", player))
+    items.append(create_item("Primary Ammo", player))
+    items.append(create_item("Secondary Ammo", player))
+    items.append(create_item("Secondary Ammo", player))
+
     if include_traps:
-        items.append(create_item("First Aid Kit", player))
-        items.append(create_item("First Aid Kit", player))
-        items.append(create_item("First Aid Kit", player))
-        items.append(create_item("Primary Ammo", player))
-        items.append(create_item("Primary Ammo", player))
-        items.append(create_item("Primary Ammo", player))
-        items.append(create_item("Primary Ammo", player))
-        items.append(create_item("Secondary Ammo", player))
-        items.append(create_item("Secondary Ammo", player))
-        items.append(create_item("Secondary Ammo", player))
-        items.append(create_item("Secondary Ammo", player))
+        items.append(create_item("Dilophosaur Spit Trap", player))
+        items.append(create_item("Dilophosaur Spit Trap", player))
+        items.append(create_item("Dilophosaur Spit Trap", player))
     else:
-        items.append(create_item("First Aid Kit", player))
-        items.append(create_item("First Aid Kit", player))
-        items.append(create_item("First Aid Kit", player))
-        items.append(create_item("Primary Ammo", player))
-        items.append(create_item("Primary Ammo", player))
         items.append(create_item("Primary Ammo", player))
         items.append(create_item("Secondary Ammo", player))
         items.append(create_item("Secondary Ammo", player))
-        items.append(create_item("Dilophosaur Spit Trap", player))
-        items.append(create_item("Dilophosaur Spit Trap", player))
-        items.append(create_item("Dilophosaur Spit Trap", player))
 
     return items
 
