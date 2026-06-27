@@ -6,24 +6,21 @@ import math
 
 from ctrando.arguments import arguments, argumenttypes
 
-
 option_class_buf = io.StringIO()
 dataclass_buf = io.StringIO()
 option_groups_buf = io.StringIO()
 
 group_name_list: list[str] = []
 
-args_to_omit = [
-    "ending"
-]
+args_to_omit = ["ending"]
 
 
 def get_class_name(val: str) -> str:
-    return ''.join(x.capitalize() for x in val.split('_'))
+    return "".join(x.capitalize() for x in val.split("_"))
 
 
 def get_display_name(val: str) -> str:
-    return val.replace('_', ' ').title()
+    return val.replace("_", " ").title()
 
 
 def write_toggle_control(flag: str, spec: argumenttypes.FlagArg):
@@ -78,8 +75,8 @@ class {get_class_name(flag)}(Choice):
         if choice_str == "random":
             choice_str = "rdi_random"
 
-        choice_str = choice_str.replace(' ', '_')
-        choice_str = choice_str.replace('?', '')
+        choice_str = choice_str.replace(" ", "_")
+        choice_str = choice_str.replace("?", "")
         option_class_buf.write(f"    option_{choice_str} = {counter}\n")
         counter = counter + 1
 
@@ -95,19 +92,22 @@ class {get_class_name(flag)}(FreeText):
     option_class_buf.write(control)
 
 
-def parse_option_group(group_name: str, arg_spec: dict):
+def parse_option_group(group_name: str, arg_spec: argumenttypes.ArgSpec | argumenttypes.Argument):
 
     if group_name not in group_name_list:
         if group_name_list:
             # Close out the previous group
-            option_groups_buf.write('''
+            option_groups_buf.write("""
         ]
-    ),\n''')
-        option_groups_buf.write(f'''
+    ),\n""")
+        option_groups_buf.write(f"""
     OptionGroup(
         "{get_display_name(group_name)}",
-        [\n''')
+        [\n""")
         group_name_list.append(group_name)
+
+    if not isinstance(arg_spec, dict):
+        raise Exception("arg_spec is not a dict.")
 
     for flag, spec in arg_spec.items():
         if flag in args_to_omit:
@@ -119,8 +119,7 @@ def parse_option_group(group_name: str, arg_spec: dict):
         else:
             if not isinstance(spec, argumenttypes.MultipleDiscreteSelection):
                 dataclass_buf.write(f"    {flag}: {get_class_name(flag)}\n")
-                option_groups_buf.write(
-                    f"            {get_class_name(flag)},\n")
+                option_groups_buf.write(f"            {get_class_name(flag)},\n")
 
         if isinstance(spec, argumenttypes.FlagArg):
             write_toggle_control(flag, spec)
@@ -137,18 +136,18 @@ def parse_option_group(group_name: str, arg_spec: dict):
 
 def main():
 
-    option_class_buf.write('''
+    option_class_buf.write("""
 from dataclasses import dataclass
 
 from Options import Choice, DefaultOnToggle, FreeText, OptionGroup, \\
-    PerGameCommonOptions, Range, Toggle\n\n''')
+    PerGameCommonOptions, Range, Toggle\n\n""")
 
-    dataclass_buf.write('''
+    dataclass_buf.write("""
 @dataclass
-class CTRDIOptions(PerGameCommonOptions):\n''')
+class CTRDIOptions(PerGameCommonOptions):\n""")
 
-    option_groups_buf.write('''\n
-option_groups: list[OptionGroup] = [\n''')
+    option_groups_buf.write("""\n
+option_groups: list[OptionGroup] = [\n""")
 
     arg_specs = arguments.Settings.get_argument_spec()
     for section_name, arg_spec in arg_specs.items():
@@ -157,17 +156,17 @@ option_groups: list[OptionGroup] = [\n''')
         parse_option_group(section_name, arg_spec)
 
     # Close out the last option group
-    option_groups_buf.write('''
+    option_groups_buf.write("""
         ]
     )
 ]
-''')
+""")
 
     # Write everything to the options file
     option_class_buf.seek(0)
     dataclass_buf.seek(0)
     option_groups_buf.seek(0)
-    with open("Options.py", 'w') as file:
+    with open("Options.py", "w") as file:
         file.write(option_class_buf.read())
         file.write(dataclass_buf.read())
         file.write(option_groups_buf.read())

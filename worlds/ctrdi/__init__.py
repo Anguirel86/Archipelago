@@ -1,42 +1,38 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import os
 import typing
-from typing import Callable
-
-# Archipelago imports
-import settings
-import worlds
-
-from BaseClasses import CollectionState, Item, \
-    ItemClassification, Location, MultiWorld, Region, Tutorial
-
-from Options import Choice, Range, Toggle
-
-from Utils import read_snes_rom
-
-from worlds.AutoWorld import WebWorld, World
-
-# Local APWorld imports
-from .Options import CTRDIOptions, option_groups
+from collections.abc import Callable
+from dataclasses import dataclass
 
 # RDI randomizer imports
+import ctrando.treasures.treasuretypes as tty
 from ctrando import randomizer
 from ctrando.arguments import arguments, argumenttypes, tomloptions
 from ctrando.bosses.bosstypes import BossSpotID
 from ctrando.common import ctenums, ctrom, memory, randostate
-from ctrando.common.ctenums import (
-    ItemID, RecruitID,  TreasureID as TID)
+from ctrando.common.ctenums import ItemID, RecruitID
+from ctrando.common.ctenums import TreasureID as TID
 from ctrando.entranceshuffler import entrancefiller
 from ctrando.entranceshuffler.locregions import LocRegion
 from ctrando.entranceshuffler.owregions import OWRegion
 from ctrando.entranceshuffler.regionmap import ExitConnector, RegionConnector
 from ctrando.logic import logictypes
 from ctrando.objectives import objectivetypes as objty
-import ctrando.treasures.treasuretypes as tty
 
+import settings
+import worlds
+from BaseClasses import CollectionState, Item, ItemClassification, Location, MultiWorld, Region, Tutorial
+
+# Archipelago imports
+from NetUtils import MultiData
+from Options import Choice, Range, Toggle
+from Utils import read_snes_rom
+from worlds.AutoWorld import WebWorld, World
+
+# Local APWorld imports
+from .Options import CTRDIOptions, option_groups
 
 # TODO task list:
 #  - Add Options handing
@@ -63,6 +59,7 @@ class CTRDIDeltaPatch(worlds.Files.APDeltaPatch):
 class CTRDISettings(settings.Group):
     class RomFile(settings.SNESRomPath):
         """File name of the CT ROM"""
+
         description = "Chrono Trigger (USA) ROM"
         copy_to = "Chrono Trigger (USA).sfc"
         md5s = [CTRDIDeltaPatch.hash]
@@ -71,25 +68,28 @@ class CTRDISettings(settings.Group):
 
 
 class CTRDIWebWorld(WebWorld):
-    tutorials = [Tutorial(
-        "Multiworld Setup Guide",
-        "Setup guide for CTRDI multiworld",
-        "English",
-        "multiworld_en.md",
-        "multiworld/en",
-        ["Pseudoarc", "Anguirel"]
-    )]
+    tutorials = [
+        Tutorial(
+            "Multiworld Setup Guide",
+            "Setup guide for CTRDI multiworld",
+            "English",
+            "multiworld_en.md",
+            "multiworld/en",
+            ["Pseudoarc", "Anguirel"],
+        )
+    ]
     option_groups = option_groups
 
 
 @dataclass
 class RegionData:
     """Store corresponding RDI and AP region definitions"""
+
     rdi_region: LocRegion | OWRegion
     ap_region: Region
 
 
-_locs_to_skip: dict[TID] = [
+_locs_to_skip: list[TID] = [
     TID.TRADING_POST_PETAL_FANG_BASE,
     TID.TRADING_POST_PETAL_FANG_UPGRADE,
     TID.TRADING_POST_PETAL_FANG_UPGRADE,
@@ -103,7 +103,7 @@ _locs_to_skip: dict[TID] = [
     TID.TRADING_POST_FANG_FEATHER_UPGRADE,
     TID.TRADING_POST_HORN_FEATHER_BASE,
     TID.TRADING_POST_HORN_FEATHER_UPGRADE,
-    TID.TRADING_POST_SPECIAL
+    TID.TRADING_POST_SPECIAL,
 ]
 
 
@@ -111,7 +111,8 @@ class CTRDIWorld(World):
     """
     TODO: CTRDI description here
     """
-    game: str = "Chrono Trigger: Rando-Dalton Imperial"
+
+    game = "Chrono Trigger: Rando-Dalton Imperial"
     topology_present = True
     origin_region_name = "starting_rewards"
     options_dataclass = CTRDIOptions
@@ -124,12 +125,10 @@ class CTRDIWorld(World):
     rdi_settings: arguments.Settings = None
     config: randostate.ConfigState = None
 
-    item_name_to_id = {str(item): ITEM_ID_BASE +
-                       item for item in ItemID}
-    location_name_to_id = {str(loc): ITEM_ID_BASE +
-                           loc for loc in TID}
+    item_name_to_id: typing.ClassVar[dict[str, int]] = {str(item): ITEM_ID_BASE + item for item in ItemID}
+    location_name_to_id: typing.ClassVar[dict[str, int]] = {str(loc): ITEM_ID_BASE + loc for loc in TID}
 
-    _item_name_to_RDI_type = {str(x): x for x in ItemID}
+    _item_name_to_rdi_type: typing.ClassVar[dict[str, ItemID]] = {str(x): x for x in ItemID}
 
     def __init__(self, world: MultiWorld, player: int):
         super().__init__(world, player)
@@ -149,14 +148,13 @@ class CTRDIWorld(World):
         self._translate_settings()
         base_rom = ctrom.CTRom.from_file(self.get_rom_path())
         self.ct_rom = randomizer.ctrom.CTRom(base_rom.getvalue())
-        self.config = randomizer.get_random_config(
-            self.rdi_settings, self.ct_rom, self.multiworld.random)
+        self.config = randomizer.get_random_config(self.rdi_settings, self.ct_rom, self.multiworld.random)
 
     def create_item(self, name: str) -> Item:
         """
         Create an AP item from the named RDI item.
         """
-        return self._create_AP_item(self._item_name_to_RDI_type[name])
+        return self._create_ap_item(self._item_name_to_rdi_type[name])
 
     def create_items(self) -> None:
         """
@@ -164,7 +162,6 @@ class CTRDIWorld(World):
         """
         items = []
         for loc, value in self.config.treasure_assignment.items():
-
             if loc in _locs_to_skip:
                 continue
 
@@ -174,7 +171,7 @@ class CTRDIWorld(World):
                 #       for gold rewards, so maybe leave gold chests local?
                 pass
             else:
-                items.append(self._create_AP_item(value))
+                items.append(self._create_ap_item(value))
 
         self.multiworld.itempool += items
 
@@ -194,12 +191,10 @@ class CTRDIWorld(World):
         menu_region = region_dict[self.origin_region_name].ap_region
         victory_loc = Location(self.player, "Victory", None, menu_region)
         victory_loc.event = True
-        victory_loc.place_locked_item(
-            Item("Victory", ItemClassification.progression, None, self.player))
+        victory_loc.place_locked_item(Item("Victory", ItemClassification.progression, None, self.player))
         victory_loc.access_rule = self._create_victory_rule()
         menu_region.locations.append(victory_loc)
-        self.multiworld.completion_condition[self.player] = \
-            lambda state: state.has("Victory", self.player)
+        self.multiworld.completion_condition[self.player] = lambda state: state.has("Victory", self.player)
 
         # Add all regions to the multiworld object
         self.multiworld.regions += [x.ap_region for x in region_dict.values()]
@@ -213,10 +208,16 @@ class CTRDIWorld(World):
 
         def victory_rule(state: CollectionState) -> bool:
             # Get objective count
-            obj_tokens = ["Objective 1", "Objective 2",
-                          "Objective 3", "Objective 4",
-                          "Objective 5", "Objective 6",
-                          "Objective 7", "Objective 8"]
+            obj_tokens = [
+                "Objective 1",
+                "Objective 2",
+                "Objective 3",
+                "Objective 4",
+                "Objective 5",
+                "Objective 6",
+                "Objective 7",
+                "Objective 8",
+            ]
 
             num_objs_complete = 0
             for obj in obj_tokens:
@@ -230,8 +231,7 @@ class CTRDIWorld(World):
             timegauge_1999_open = num_objs_complete >= self.rdi_settings.objective_options.num_timegauge_objectives
 
             # Location access
-            has_eot = state.has(
-                str(memory.Flags.HAS_EOT_TIMEGAUGE_ACCESS), self.player)
+            has_eot = state.has(str(memory.Flags.HAS_EOT_TIMEGAUGE_ACCESS), self.player)
 
             # Build up the access rules to lavos
             # End of Time -> Bucket
@@ -239,15 +239,13 @@ class CTRDIWorld(World):
                 return True
 
             # Hard Lavos - TODO: Do we actually want to include this in logic?
-            ocean_palace_access = state.has(
-                str(objty.QuestID.ZEAL_PALACE_THRONE), self.player)
+            ocean_palace_access = state.has(str(objty.QuestID.ZEAL_PALACE_THRONE), self.player)
             ruby_knife = state.has(str(ItemID.RUBY_KNIFE), self.player)
             if ocean_palace_access and ruby_knife:
                 return True
 
             # Crash Epoch into lavos in 1999
-            has_flight = state.has(
-                str(logictypes.ScriptReward.FLIGHT), self.player)
+            has_flight = state.has(str(logictypes.ScriptReward.FLIGHT), self.player)
             if has_flight and timegauge_1999_open:
                 return True
 
@@ -267,40 +265,37 @@ class CTRDIWorld(World):
 
         Ignore shop rewards
         """
-        for name, loc_region in self.config.region_map.loc_region_dict.items():
-            reward_list = \
-                list(loc_region.reward_spots) + loc_region.region_rewards
+        for loc_region in self.config.region_map.loc_region_dict.values():
+            reward_list = list(loc_region.reward_spots) + loc_region.region_rewards
             for reward in reward_list:
-                if isinstance(reward, logictypes.ScriptReward) or \
-                        isinstance(reward, logictypes.StrangeReward) or \
-                        isinstance(reward, memory.Flags) or \
-                        isinstance(reward, BossSpotID) or \
-                        isinstance(reward, ItemID):
-
-                    self._create_event_loc_item_pair(
-                        str(reward), region_dict[loc_region.name].ap_region)
+                if (
+                    isinstance(reward, logictypes.ScriptReward)
+                    or isinstance(reward, logictypes.StrangeReward)
+                    or isinstance(reward, memory.Flags)
+                    or isinstance(reward, BossSpotID)
+                    or isinstance(reward, ItemID)
+                ):
+                    self._create_event_loc_item_pair(str(reward), region_dict[loc_region.name].ap_region)
 
     def _create_recruit_events(self, region_dict: dict[str, RegionData]):
         """
         Create event locations and event items for character recruitment.
         """
-        for name, loc_region in self.config.region_map.loc_region_dict.items():
+        for loc_region in self.config.region_map.loc_region_dict.values():
             for reward in loc_region.reward_spots:
                 if isinstance(reward, RecruitID):
                     # Found a recruit spot
                     for character in self.config.recruit_dict[reward]:
                         char_name = str(character)
                         ap_region = region_dict[loc_region.name].ap_region
-                        self._create_event_loc_item_pair(
-                            char_name, ap_region)
+                        self._create_event_loc_item_pair(char_name, ap_region)
 
-    def _create_locations_for_regions(
-            self, region_dict: dict[str, RegionData]):
+    def _create_locations_for_regions(self, region_dict: dict[str, RegionData]):
         """
         Create corresponding locations for each RDI location and
         attach them to the appropriate regions.
         """
-        for name, region_data in region_dict.items():
+        for region_data in region_dict.values():
             if isinstance(region_data.rdi_region, LocRegion):
                 for loc in region_data.rdi_region.reward_spots:
                     if isinstance(loc, TID):
@@ -310,7 +305,8 @@ class CTRDIWorld(World):
                         if isinstance(self.config.treasure_assignment[loc], tty.Gold):
                             continue
                         location = Location(
-                            self.player, str(loc), self.location_name_to_id[str(loc)], region_data.ap_region)
+                            self.player, str(loc), self.location_name_to_id[str(loc)], region_data.ap_region
+                        )
                         location.access_rule = lambda state: True
                         region_data.ap_region.locations.append(location)
 
@@ -330,20 +326,17 @@ class CTRDIWorld(World):
                 raise Exception(f"Region not found: {name}")
 
             ap_region = Region(name, self.player, self.multiworld)
-            region_dict[name] = RegionData(
-                rdi_region=rdi_region, ap_region=ap_region)
+            region_dict[name] = RegionData(rdi_region=rdi_region, ap_region=ap_region)
 
         # Now that all regions are created, connect them up
         # based on the exit layout in the rando config
-        for name, connectors in self.config.region_map.name_connector_dict.items():
-
+        for connectors in self.config.region_map.name_connector_dict.values():
             for connector in connectors:
                 from_region = region_dict[connector.from_region_name]
                 to_region = region_dict[connector.to_region_name]
 
                 # Create the exit and set up its rule
-                exit_name = f"{connector.link_name}-{
-                    connector.from_region_name}-{connector.to_region_name}"
+                exit_name = f"{connector.link_name}-{connector.from_region_name}-{connector.to_region_name}"
                 exit_obj = from_region.ap_region.create_exit(exit_name)
                 access_rule = self._create_access_rule(connector)
                 exit_obj.access_rule = access_rule
@@ -355,14 +348,10 @@ class CTRDIWorld(World):
         """
         Create an event location with a locked event item
         """
-        item = Item(name,
-                    ItemClassification.progression,
-                    None,
-                    self.player)
+        item = Item(name, ItemClassification.progression, None, self.player)
 
         loc_name = f"{region.name}-{name}"
         loc = Location(self.player, loc_name, None, region)
-        loc.event = True
         loc.place_locked_item(item)
         region.locations.append(loc)
 
@@ -373,7 +362,7 @@ class CTRDIWorld(World):
         # TODO: Real filler items - Ideally this will never be needed
         return str(ctenums.ItemID.MOP)
 
-    def modify_multidata(self, multidata: dict):
+    def modify_multidata(self, multidata: MultiData) -> None:
         pass
 
     def generate_output(self, output_directory: str):
@@ -381,8 +370,7 @@ class CTRDIWorld(World):
         Generate the randomized ROM and create the patch file
         """
 
-        out_rom = randomizer.get_ctrom_from_config(
-            self.ct_rom, self.rdi_settings, self.config)
+        out_rom = randomizer.get_ctrom_from_config(self.ct_rom, self.rdi_settings, self.config)
 
         basename = self.multiworld.get_out_file_name_base(self.player)
         output_path = os.path.join(output_directory, f"{basename}.sfc")
@@ -391,19 +379,16 @@ class CTRDIWorld(World):
             file.write(out_rom.getbuffer())
 
         patch = CTRDIDeltaPatch(
-            os.path.splittext(output_path)[0] +
-            CTRDIDeltaPatch.patch_file_ending,
+            os.path.splitext(output_path)[0] + CTRDIDeltaPatch.patch_file_ending,
             player=self.player,
             player_name=self.multiworld.player_name[self.player],
-            patched_path=output_path)
+            patched_path=output_path,
+        )
 
         patch.write()
         os.unlink(output_path)
 
-    def _create_access_rule(
-        self,
-        connector: RegionConnector | ExitConnector
-    ) -> Callable[[CollectionState], bool]:
+    def _create_access_rule(self, connector: RegionConnector | ExitConnector) -> Callable[[CollectionState], bool]:
         """
         Get an AP access rule from a RDI connector object
         """
@@ -416,7 +401,6 @@ class CTRDIWorld(World):
         def can_access(state: CollectionState) -> bool:
 
             for single_rule in connector.rule.get_access_rule():
-
                 satisfies_rule = True
                 for item in single_rule:
                     count = single_rule.count(item)
@@ -431,7 +415,7 @@ class CTRDIWorld(World):
 
         return can_access
 
-    def _create_AP_item(self, item: ctenums.ItemID) -> Item:
+    def _create_ap_item(self, item: ctenums.ItemID) -> Item:
         """
         Create an AP item from a CTRDI ItemID
         """
@@ -452,6 +436,9 @@ class CTRDIWorld(World):
         data_dict = {}
         group_specs = arguments.Settings.get_argument_spec()
         for group_spec in group_specs.values():
+            if not isinstance(group_spec, dict):
+                continue
+
             for flag_name, spec in group_spec.items():
                 if hasattr(self.options, flag_name):
                     value = getattr(self.options, flag_name)
@@ -494,8 +481,7 @@ class CTRDIWorld(World):
         """
         Get the base ROM data as a bytes object
         """
-        base_rom_bytes = getattr(
-            CTRDIWorld.get_base_rom_bytes, "base_rom_bytes", None)
+        base_rom_bytes = getattr(CTRDIWorld.get_base_rom_bytes, "base_rom_bytes", None)
         if not base_rom_bytes:
             file_name = CTRDIWorld.get_rom_path()
             base_rom_bytes = bytes(read_snes_rom(open(file_name, "rb")))
@@ -503,8 +489,7 @@ class CTRDIWorld(World):
             basemd5 = hashlib.md5()
             basemd5.update(base_rom_bytes)
             if basemd5.hexdigest() != CTUSA_MD5_HASH:
-                raise Exception(
-                    'Supplied base ROM does not match the known MD5 hash')
+                raise Exception("Supplied base ROM does not match the known MD5 hash")
 
             CTRDIWorld.get_base_rom_bytes.base_rom_bytes = base_rom_bytes
 

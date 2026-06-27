@@ -1,17 +1,16 @@
-from dataclass import dataclass
 import logging
 import typing
+from dataclasses import dataclass
 from typing import override
 
-from NetUtils import ClientStatus, NetworkItem
-from SNIClient import SNIContext
-
-from worlds.AutoSNIClient import SNIClient
-
-from ctrando.common.ctenums import TreasureID as TID
 import ctrando.common.memory
+from ctrando.common.ctenums import TreasureID as TID
 from ctrando.common.memory import Flags
 from ctrando.treasures import treasuretypes
+
+from NetUtils import ClientStatus
+from SNIClient import SNIContext
+from worlds.AutoSNIClient import SNIClient
 
 snes_logger = logging.getLogger("SNES")
 
@@ -52,6 +51,7 @@ class CheckCounter:
     Dataclass to handle checks that are implemented as
     counters rather than standard memory flags
     """
+
     address: int
     count: int
 
@@ -66,7 +66,6 @@ _script_locations: dict[TID, Flags | CheckCounter] = {
     TID.NORTHERN_RUINS_BASEMENT_1000: Flags.NORTHERN_RUINS_BASEMENT_CHEST_1000_OBTAINED,
     TID.NORTHERN_RUINS_ANTECHAMBER_LEFT_600: Flags.NORTHERN_RUINS_ANTECHAMBER_CHEST_600_OBTAINED,
     TID.NORTHERN_RUINS_ANTECHAMBER_LEFT_1000: Flags.NORTHERN_RUINS_ANTECHAMBER_CHEST_1000_OBTAINED,
-
     # Sealed chests
     TID.NORTHERN_RUINS_ANTECHAMBER_SEALED_600: Flags.NORTHERN_RUINS_ANTECHAMBER_SEALED_600_OBTAINED,
     TID.NORTHERN_RUINS_ANTECHAMBER_SEALED_1000: Flags.NORTHERN_RUINS_ANTECHAMBER_SEALED_1000_OBTAINED,
@@ -89,7 +88,6 @@ _script_locations: dict[TID, Flags | CheckCounter] = {
     TID.HECKRAN_SEALED_1: Flags.HECKRAN_SEALED_OBTAINED,
     TID.HECKRAN_SEALED_2: Flags.HECKRAN_SEALED_OBTAINED,
     TID.MAGIC_CAVE_SEALED: Flags.MAGIC_CAVE_SEALED_CHEST,
-
     # Standard key item locations
     TID.REPTITE_LAIR_KEY: Flags.NIZBEL_DEFEATED,
     TID.MELCHIOR_RAINBOW_SHELL: Flags.MELCHIOR_TREASURY_FREE_ITEM_GIVEN,
@@ -111,7 +109,6 @@ _script_locations: dict[TID, Flags | CheckCounter] = {
     TID.LAZY_CARPENTER: Flags.CHORAS_1000_RECEIVED_TOOLS,
     TID.TABAN_GIFT_VEST: Flags.TABAN_VEST_GIVEN,
     TID.DENADORO_MTS_KEY: Flags.OBTAINED_DENADORO_KEY,
-
     # Other script treasures
     TID.TABAN_GIFT_HELM: Flags.TABAN_HELM_GIVEN,
     TID.TABAN_GIFT_SUIT: Flags.TABAN_SUIT_GIVEN,
@@ -174,13 +171,12 @@ _script_locations: dict[TID, Flags | CheckCounter] = {
     TID.NORTHERN_RUINS_HEROS_GRAVE_MAGIC_TAB: Flags.CYRUS_GRAVE_MAGIC_TAB,
     TID.NORTHERN_RUINS_LANDING_POWER_TAB: Flags.NORTHERN_RUINS_LANDING_POWER_TAB,
     TID.CRONOS_MOM: Flags.MOM_GAVE_MONEY,
-    TID.TRUCE_MAYOR_2F_OLD_MAN: CheckCounter(
-        ctrando.memory.Memory.TRUCE_MAYOR_2F_GOLD_NPC_COUNTER, 2),
+    TID.TRUCE_MAYOR_2F_OLD_MAN: CheckCounter(ctrando.common.memory.Memory.TRUCE_MAYOR_2F_GOLD_NPC_COUNTER, 2),
     TID.IOKA_SWEETWATER_TONIC: Flags.OBTAINED_SWEETWATER_HUT_TONICS,
     TID.DORINO_INN_POWERMEAL: Flags.OBTAINED_DORINO_INN_POWERMEAL,
     TID.YAKRA_KEY_CHEST: Flags.RESCUE_CHANCELLOR_1000,
     TID.COURTROOM_YAKRA_KEY: Flags.OBTAINED_YAKRA_KEY,
-    TID.JOHNNY_RACE_POWER_TAB: Flags.OBTAINED_JOHNNY_RACE_POWER_TAB
+    TID.JOHNNY_RACE_POWER_TAB: Flags.OBTAINED_JOHNNY_RACE_POWER_TAB,
 }
 
 
@@ -191,7 +187,7 @@ class CTRDIClient(SNIClient):
 
     game = "Chrono Trigger: Rando-Dalton Imperial"
 
-    _loc_name_to_id = {str(loc): ITEM_ID_BASE + loc for loc in TID}
+    _loc_name_to_id: typing.ClassVar[dict[str, int]] = {str(loc): ITEM_ID_BASE + loc for loc in TID}
 
     def __init__(self):
         super().__init__()
@@ -220,22 +216,17 @@ class CTRDIClient(SNIClient):
         Check if a script based treasure has been collected
         """
         if loc not in _script_locations.keys():
-            raise Exception(f"Unknown location: {str(loc)}")
+            raise Exception(f"Unknown location: {loc}")
 
         check_data = _script_locations[loc]
         offset = check_data.address - EVENT_BASE_ADDR
         if isinstance(check_data, Flags):
             # Standard memory flag
             return event_data[offset] & check_data.bit
-        else:
-            # Counter type check
-            return event_data[offset] >= check_data.count
+        # Counter type check
+        return event_data[offset] >= check_data.count
 
-    def _can_track(
-            self,
-            ctx: SNIContext,
-            event_data: typing.Optional[bytes],
-            map_data: typing.Optional[bytes]) -> bool:
+    def _can_track(self, ctx: SNIContext, event_data: bytes | None, map_data: bytes | None) -> bool:
         """
         Check if the game is in a valid state for tracking.
         Tracking isn't valid on some maps or during certain cutscenes.
@@ -265,10 +256,9 @@ class CTRDIClient(SNIClient):
         if map_id > MAX_MAP_ID:
             return False
 
-    def _track_locations(
-            self,
-            ctx: SNIContext,
-            event_data: bytes) -> list[int]:
+        return True
+
+    def _track_locations(self, ctx: SNIContext, event_data: bytes) -> list[int]:
         """
         Track which locations the player has collected.
         """
@@ -292,17 +282,13 @@ class CTRDIClient(SNIClient):
         Deliver the next available item to the player if there are
         any items waiting to be delivered.
         """
-        from SNIClient import snes_read, snes_buffered_write, snes_flush_writes
+        from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
 
-        item_buf = await snes_read(
-            ctx, cls._convert_to_sni_addressing(RECEIVED_ITEM_ADDR), 1)
+        item_buf = await snes_read(ctx, cls._convert_to_sni_addressing(RECEIVED_ITEM_ADDR), 1)
 
-        item_cnt_buf = await snes_read(
-            ctx, cls._convert_to_sni_addressing(RECEIVED_ITEM_CNT), 2)
+        item_cnt_buf = await snes_read(ctx, cls._convert_to_sni_addressing(RECEIVED_ITEM_CNT), 2)
 
-        if item_cnt_buf is None or \
-                item_buf is None or \
-                item_buf[0] != 0:
+        if item_cnt_buf is None or item_buf is None or item_buf[0] != 0:
             # Read failed or an item is already in the delivery buffer
             return
 
@@ -312,15 +298,11 @@ class CTRDIClient(SNIClient):
             in_game_id = item.item - ITEM_ID_BASE
 
             if in_game_id <= MAX_IN_GAME_ITEM_ID:
-                snes_buffered_write(
-                    ctx,
-                    cls._convert_to_sni_addressing(RECEIVED_ITEM_ADDR),
-                    bytes[in_game_id])
+                snes_buffered_write(ctx, cls._convert_to_sni_addressing(RECEIVED_ITEM_ADDR), bytes([in_game_id]))
 
                 await snes_flush_writes(ctx)
 
-    async def _handle_victory_condition(
-            self, ctx: SNIContext, event_data: bytes):
+    async def _handle_victory_condition(self, ctx: SNIContext, event_data: bytes):
         """
         Check if the player has achieved the goal.
         """
@@ -330,8 +312,7 @@ class CTRDIClient(SNIClient):
         if victory and not ctx.finished_game:
             # Notify the server that the player beat the game
             ctx.finished_game = True
-            await ctx.send_msg(
-                [{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
+            await ctx.send_msg([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
 
     @override
     async def validate_rom(self, ctx: SNIContext) -> bool:
@@ -350,26 +331,27 @@ class CTRDIClient(SNIClient):
 
         if not ctx.allow_collect or ctx.server is None or ctx.slot is None:
             # Client isn't fully connected yet
-            return False
+            return
 
         # Read the map and event data needed for subsequent checks
         map_data = await snes_read(ctx, LOCATION_ADDR, 2)
-        event_addr = self._convert_to_sni_addressing(
-            EVENT_BASE_ADDR), EVENT_BLOCK_SIZE
-        event_data = await snes_read(ctx, event_addr)
+        event_addr = self._convert_to_sni_addressing(EVENT_BASE_ADDR)
+        event_data = await snes_read(ctx, event_addr, EVENT_BLOCK_SIZE)
+
+        if event_data is None:
+            return
 
         # Check if the game is in a valid state for tracking then
         # handle new locations and item delivery.
         if self._can_track(ctx, event_data, map_data):
             new_locations = self._track_locations(ctx, event_data)
-            self._deliver_next_item(ctx)
+            await self._deliver_next_item(ctx)
 
             if len(new_locations) > 0:
                 # Send newly checked locations to the server
-                await ctx.send_msgs(
-                    [{"cmd": "LocationChecks", "locations": new_locations}])
+                await ctx.send_msgs([{"cmd": "LocationChecks", "locations": new_locations}])
 
-            self._handle_victory_condition(ctx, event_data)
+            await self._handle_victory_condition(ctx, event_data)
 
     @override
     async def deathlink_kill_player(self, ctx: SNIContext) -> None:
