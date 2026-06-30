@@ -207,11 +207,11 @@ location_table: dict[str, LocationData] = {
     "Robert Muldoon ID Card": LocationData(0x22, ["Raptor Pen Battery"], "Raptor Pen"),
     "Alan Grant ID Card": LocationData(
         0x23,
-        [["Visitor Center Battery", "John Hammond ID Card"]],
+        [["Visitor Center Battery"]],
         "Visitor Center"),
     "Donald Gennaro ID Card": LocationData(
         0x24,
-        [["Ian Malcolm ID Card"]],  # TODO: Additional rules?
+        [["Ian Malcolm ID Card"]],
         "Nublar Utility Shed"),
     "Ray Arnold ID Card": LocationData(
         0x25,
@@ -278,8 +278,8 @@ location_table: dict[str, LocationData] = {
         True),
     "Block Raptor Pen Door": LocationData(
         0x63,
-        [["John Hammond ID Card", "Ellie Sattler ID Card"],
-            ["Alan Grant ID Card", "Raptor Pen Battery"]],
+        [["John Hammond ID Card", "Ellie Sattler ID Card", "Reboot Park Systems"],
+            ["Alan Grant ID Card", "Raptor Pen Battery", "Reboot Park Systems"]],
         "Raptor Pen",
         True),
     "Security Level 1": LocationData(
