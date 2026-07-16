@@ -8,7 +8,6 @@ def _patch_ap_item_handling(rom: JPRom):
     """
     Patch in a routine to handle delivering AP items to the player
     """
-
     spit_trap_duration = 0x60
     spit_trap_id = 0x40
     shock_trap_id = 0x41
@@ -117,8 +116,6 @@ def _patch_ap_item_handling(rom: JPRom):
         inst.CMP(0x30, AM.IMM16),
         inst.BNE("check_primary_ammo"),
         # It's a first aid kit.  Fully restore health.
-        # TODO: Could maybe do STZ here?  It doesn't support long addressing,
-        #       but SNES WRAM mapping is weird.
         inst.LDA(0x0000, AM.IMM16),
         inst.STA(mem.DAMAGE_TAKEN_ADDR, AM.LNG),
         inst.BRA("end"),
@@ -146,7 +143,7 @@ def _patch_ap_item_handling(rom: JPRom):
     filler_routine_addr = rom.reserve(len(filler_routine_assembled))
 
     # This is the entry point for the AP item handling routine
-    # We stat out in 8 bit accum and reg mode
+    # We start out in 8 bit accum and reg mode
     item_routine: assemble.ASMList = [
         inst.REP(0x10),  # 16 bit index registers
         inst.SEP(0x20),  # 8 bit accumulator
@@ -193,12 +190,13 @@ def _patch_ap_item_handling(rom: JPRom):
         inst.BNE("end"),  # nothing after traps
         inst.JSL(rom.to_cpu_addr(trap_routine_addr)),
         "end",
-        # Increment the rvcd counter
+        # Increment the received counter
         inst.SEP(0x20),
         inst.LDA(mem.ITEM_CNT_ADDR, AM.LNG),
         inst.INC(mode=AM.NO_ARG),
         inst.STA(mem.ITEM_CNT_ADDR, AM.LNG),
-        # Zero out the item recvd address to signal we're ready for another
+
+        # Zero out the item received address to signal we're ready for another
         inst.LDA(0, AM.IMM8),
         inst.STA(mem.ITEM_RCV_ADDR, AM.LNG),
         "do_nothing",

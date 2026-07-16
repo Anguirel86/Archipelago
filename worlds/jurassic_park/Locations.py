@@ -86,7 +86,7 @@ location_table: dict[str, LocationData] = {
     "John Hammond ID Card": LocationData(0x20, None, "Visitor Center"),
     "Ellie Sattler ID Card": LocationData(0x21, [["Ship Battery", "Ray Arnold ID Card", "Security Level 2"]], "Ship"),
     "Robert Muldoon ID Card": LocationData(0x22, [["Raptor Pen Battery"]], "Raptor Pen"),
-    "Alan Grant ID Card": LocationData(0x23, [["Visitor Center Battery", "John Hammond ID Card"]], "Visitor Center"),
+    "Alan Grant ID Card": LocationData(0x23, [["Visitor Center Battery"]], "Visitor Center"),
     "Donald Gennaro ID Card": LocationData(
         0x24,
         [["Ian Malcolm ID Card"]],  # TODO: Additional rules?

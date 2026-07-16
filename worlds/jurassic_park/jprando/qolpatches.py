@@ -101,7 +101,9 @@ def patch_infinite_ammo(rom: JPRom):
     rom.write(0x10AFC1, nop3)  # Rockets
 
     # Secondary weapon
-    rom.write(0x3053, nop3)  # overworld
+    # Overworld
+    rom.write(0x3053, nop3)  # Bolas
+    rom.write(0x3156, nop3)  # Gas canisters
     # in buildings
     rom.write(0x10AB84, nop3)  # Bolas
     rom.write(0x10A85E, nop3)  # Gas canisters
