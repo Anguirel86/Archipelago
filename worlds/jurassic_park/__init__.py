@@ -7,33 +7,32 @@ import typing
 
 # Archipelago imports
 import settings
-import worlds
-
 import Utils
-
+import worlds
 from BaseClasses import Item, MultiWorld, Tutorial
 from worlds.AutoWorld import WebWorld, World
 
+from . import Items, Locations
+
 # local world imports
 from .Client import JPClient
-from .Options import JPOptions
-from . import Items
-from . import Locations
-
+from .jprando import basepatch as bp
 from .jprando import jprom
 from .jprando import qolpatches as qol
-from .jprando import basepatch as bp
+from .Options import JPOptions
 
 
 class JPWebWorld(WebWorld):
-    tutorials = [Tutorial(
-        "Multiworld Setup Guide",
-        "Setup guide for JP multiworld",
-        "English",
-        "multiworld_en.md",
-        "multiworld/en",
-        ["Anguirel"]
-    )]
+    tutorials = [
+        Tutorial(
+            "Multiworld Setup Guide",
+            "Setup guide for JP multiworld",
+            "English",
+            "multiworld_en.md",
+            "multiworld/en",
+            ["Anguirel"],
+        )
+    ]
 
 
 JPUSA_MD5_HASH = jprom.JPRom.JPUSA_MD5_HASH
@@ -61,6 +60,7 @@ class JPDeltaPatch(worlds.Files.APDeltaPatch):
 class JPSettings(settings.Group):
     class RomFile(settings.SNESRomPath):
         """File name of the JP ROM"""
+
         description = "Jurassic Park (USA) ROM"
         copy_to = "Jurassic Park (USA).sfc"
         md5s = [JPUSA_MD5_HASH]
@@ -76,7 +76,7 @@ class JPWorld(World):
     TODO: Description here
     """
 
-    game: str = "Jurassic Park"
+    game = "Jurassic Park"
     topology_present = True
     origin_region_name = "Overworld Start"
     options_dataclass = JPOptions
@@ -108,17 +108,14 @@ class JPWorld(World):
 
     def create_items(self) -> None:
         items = Items.create_all_progression_items(self.player)
-        items += Items.create_filler_items(self.player,
-                                           self.options.enable_traps.value)
+        items += Items.create_filler_items(self.player, self.options.enable_traps.value == 1)
         self.multiworld.itempool += items
 
     def create_regions(self) -> None:
-        regions = Locations.create_regions(
-            self.player, self.multiworld, self.options.eggs_required)
+        regions = Locations.create_regions(self.player, self.multiworld, self.options.eggs_required.value)
         self.multiworld.regions += regions
 
-        self.multiworld.completion_condition[self.player] = \
-            lambda state: state.has("Escape the Island", self.player)
+        self.multiworld.completion_condition[self.player] = lambda state: state.has("Escape the Island", self.player)
 
     def generate_output(self, output_directory: str):
 
@@ -130,7 +127,7 @@ class JPWorld(World):
 
             eggs_required = self.options.eggs_required.value
 
-            bp.apply_AP_base_patch(rom, hashed_name_bytes, eggs_required)
+            bp.apply_ap_base_patch(rom, hashed_name_bytes, eggs_required)
 
             # Apply optional quality-of-life patches
             if self.options.passive_health_regen:
@@ -145,18 +142,17 @@ class JPWorld(World):
                 qol.patch_gates_open_together(rom)
 
             # Write the modified ROM
-            rompath = os.path.join(
-                output_directory,
-                f"{self.multiworld.get_out_file_name_base(self.player)}.sfc")
+            rompath = os.path.join(output_directory, f"{self.multiworld.get_out_file_name_base(self.player)}.sfc")
 
             rom.write_to_file(rompath)
 
             # Generate the patch file
             patch = JPDeltaPatch(
-                os.path.splitext(rompath)[0]+JPDeltaPatch.patch_file_ending,
+                os.path.splitext(rompath)[0] + JPDeltaPatch.patch_file_ending,
                 player=self.player,
                 player_name=self.multiworld.player_name[self.player],
-                patched_path=rompath)
+                patched_path=rompath,
+            )
 
             patch.write()
 
@@ -170,11 +166,9 @@ class JPWorld(World):
         self.rom_name_available_event.wait()
         player_name = self.multiworld.player_name[self.player]
         jp_logger.info(f"JP encoded player name: {self.encoded_name}")
-        jp_logger.info(f"original name: {
-                       multidata["connect_names"][player_name]}")
+        jp_logger.info(f"original name: {multidata['connect_names'][player_name]}")
 
-        multidata["connect_names"][self.encoded_name] = \
-            multidata["connect_names"][player_name]
+        multidata["connect_names"][self.encoded_name] = multidata["connect_names"][player_name]
 
     @staticmethod
     def get_base_rom_path():
